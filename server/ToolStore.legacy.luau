@@ -342,10 +342,38 @@ local function createToolShopGUI(player)
 
 					local toolsOwned = player:FindFirstChild("ToolsOwned")
 					if toolsOwned then
-						-- ✅ Use tool.Name directly (no space removal)
 						local toolValue = toolsOwned:FindFirstChild(tool.Name)
 						if toolValue then
 							toolValue.Value = true
+
+							if tool.Name == "FishingRod" then
+								task.spawn(function()
+									task.wait(0.3)
+
+									-- Manually activate level 13
+									local progressData = player:GetAttribute("TutorialProgress")
+									if progressData then
+										local decoded = game:GetService("HttpService"):JSONDecode(progressData)
+										decoded.CurrentLevel = 13
+										local encoded = game:GetService("HttpService"):JSONEncode(decoded)
+										player:SetAttribute("TutorialProgress", encoded)
+
+										local currentLevelValue = player:FindFirstChild("CurrentArrowLevel")
+										if currentLevelValue then
+											currentLevelValue.Value = 13
+										end
+
+										print("🎯 Activated tutorial level 13 - Bought Fishing Rod")
+
+										-- Show message
+										if _G.ShowTutorialMessage then
+											task.wait(0.5)
+											_G.ShowTutorialMessage(player, "FishingRodUnlock")
+										end
+									end
+								end)
+							end
+
 							if SoundManager then 
 								pcall(function() SoundManager:PlaySoundForPlayer(player, "PurchaseSound") end) 
 							end
@@ -357,6 +385,7 @@ local function createToolShopGUI(player)
 					end
 				end
 			end)
+
 
 			-- ✅ Robux button (use DisplayName for lookup)
 			if Products and Products[tool.DisplayName] then

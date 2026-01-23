@@ -11,7 +11,9 @@ local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
-local PlayerDataStore = DataStoreService:GetDataStore("PlayerDatav18.0.MARKETPLACE") -- NEW VERSION
+local PlayerDataStore = DataStoreService:GetDataStore("PlayerDatav18.0.1") -- NEW VERSION
+--local PlayerDataStore = DataStoreService:GetDataStore("PlayerDatav18.3.1") 
+
 
 local DataStoreModule = {}
 DataStoreModule.PlayerData = {} -- Store active player data in memory
@@ -102,7 +104,13 @@ local DEFAULT_DATA = {
 		BarnVisit = false,
 		Zone1Unlock = false
 	},
-
+	-- Tutorial Arrow (Level-Based System)
+	TutorialArrow = {
+		CurrentLevel = 1,
+		IsPaused = false,
+		DismissedMessages = {},
+		CompletedLevels = {}
+	},
 	HasVisitedBarn = false,
 	LastHarvestHint = 0,
 	HiveLastCollect_Honey = 0,
@@ -283,6 +291,14 @@ function DataStoreModule:LoadData(player)
 		if data.ActiveHouseLevel then
 			player:SetAttribute("ActiveHouseLevel", data.ActiveHouseLevel)
 		end
+		
+		-- Restore tutorial arrow progress
+		if data.TutorialArrow then
+			local tutorialData = data.TutorialArrow
+			local encoded = game:GetService("HttpService"):JSONEncode(tutorialData)
+			player:SetAttribute("TutorialArrowData", encoded)
+			print("📚 Loaded tutorial level " .. tutorialData.CurrentLevel .. " for " .. player.Name)
+		end
 
 		-- **Check session lock**
 		local currentJobId = game.JobId
@@ -355,6 +371,18 @@ function DataStoreModule:SaveData(player)
 	local totalEarned = player:FindFirstChild("TotalEarned")
 	if totalEarned then
 		data.TotalEarned = totalEarned.Value
+	end
+	
+	-- Save tutorial arrow progress
+	local tutorialData = player:GetAttribute("TutorialArrowData")
+	if tutorialData then
+		local success, decoded = pcall(function()
+			return game:GetService("HttpService"):JSONDecode(tutorialData)
+		end)
+		if success and decoded then
+			data.TutorialArrow = decoded
+			print("💾 Saved tutorial level " .. decoded.CurrentLevel .. " for " .. player.Name)
+		end
 	end
 
 	-- Save house level

@@ -107,24 +107,20 @@ local function buyBeehive(player, price)
 	end
 
 	-- Tutorial: First beehive purchased
+	-- Tutorial: First beehive purchased
 	if currentCount == 0 then
 		task.spawn(function()
 			task.wait(0.3)
-			if _G.CompleteTutorialStep then
-				_G.CompleteTutorialStep(player, "BuyFirstBeehive")
-			end
 
-			task.wait(0.5)
-			if _G.ResumeTutorialStep then
-				_G.ResumeTutorialStep(player, "GoToFirstHive")
-			end
-
-			task.wait(0.3)
-			if _G.ShowTutorialMessage then
-				_G.ShowTutorialMessage(player, "BeehiveUnlock")
+			-- ✅ Activate level 12 (GoToFirstHive) when buying first beehive
+			if _G.ActivateTutorialLevel then
+				print("🎯 Activating tutorial level 12 - First beehive bought")
+				_G.ActivateTutorialLevel(player, 12)
 			end
 		end)
 	end
+
+
 
 	return true
 end
@@ -397,9 +393,13 @@ end
 _G.openPoultryShop = function(player)
 	print(player.Name .. " opened Poultry Shop")
 
-	-- Complete tutorial step when shop is opened
-	if _G.CompleteTutorialStep then
-		_G.CompleteTutorialStep(player, "GoToPoultryShop")
+	-- ✅ Complete level 11 when opening (tutorial pauses - level becomes 999)
+	if _G.CompleteTutorialLevel then
+		local currentLevel = player:FindFirstChild("CurrentArrowLevel")
+		if currentLevel and currentLevel.Value == 11 then
+			print("🎯 Completing tutorial level 11 - Visited Poultry Shop")
+			_G.CompleteTutorialLevel(player, 11)
+		end
 	end
 
 	local function refresh()
@@ -408,3 +408,6 @@ _G.openPoultryShop = function(player)
 
 	createShopGUI(player, refresh)
 end
+
+
+

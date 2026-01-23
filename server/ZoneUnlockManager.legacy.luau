@@ -1,64 +1,62 @@
 local Players = game:GetService("Players")
 local ServerScriptService = game:GetService("ServerScriptService")
-local TutorialManager = nil
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-task.spawn(function()
-	task.wait(2)
-	TutorialManager = ServerScriptService:FindFirstChild("TutorialManager")
-end)
+-- Load TutorialLevelConfig
+local TutorialLevelConfig = require(ReplicatedStorage:WaitForChild("TutorialLevelConfig"))
 
--- Zone configuration
+-- Zone configuration (now with TutorialLevel instead of TutorialStep)
 local ZONES = {
 	{
 		Name = "Expansion Zone 1",
-		RequiredEarnings = 200,
+		RequiredEarnings = 500,
 		Plots = {5, 6, 7, 8},
 		Folder = workspace:FindFirstChild("ExpansionZone1"),
 		SignName = "ExpansionSign",
-		TutorialStep = "GoToZone1",
+		TutorialLevel = 8,  -- Level 8 = GoToZone1
 		TutorialMessage = "Zone1Unlock"
 	},
 	{
 		Name = "Expansion Zone 2",
-		RequiredEarnings = 500,
+		RequiredEarnings = 1500,
 		Plots = {9, 10, 11, 12},
 		Folder = workspace:FindFirstChild("ExpansionZone2"),
 		SignName = "ExpansionSign",
-		TutorialStep = "GoToZone2",
+		TutorialLevel = 9,  -- Level 9 = GoToZone2
 		TutorialMessage = "Zone2Unlock"
 	},
 	{
 		Name = "Expansion Zone 3",
-		RequiredEarnings = 800,
+		RequiredEarnings = 5000,
 		Plots = {13, 14, 15, 16},
 		Folder = workspace:FindFirstChild("ExpansionZone3"),
 		SignName = "ExpansionSign",
-		TutorialStep = "GoToZone3",
+		TutorialLevel = 10,  -- Level 10 = GoToZone3
 		TutorialMessage = "Zone3Unlock"
 	},
 	{
 		Name = "Poultry Shop",
-		RequiredEarnings = 1100,
+		RequiredEarnings = 15000,
 		Plots = {},
 		Folder = workspace.AnimalZone,
 		SignName = "ExpansionSign",
-		ShopModel = "PoultryShop",  -- Name of shop model	
-		TutorialStep = "GoToPoultryShop",
+		ShopModel = "PoultryShop",
+		TutorialLevel = 11,  -- Level 11 = GoToPoultryShop
 		TutorialMessage = "PoultryUnlock"
 	},
 	{
 		Name = "First Beehive",
-		RequiredEarnings = 0,  
-		RequiredBeehives = 1, 
+		RequiredEarnings = 0,
+		RequiredBeehives = 1,
 		Plots = {},
 		Folder = workspace.AnimalZone,
-		TutorialStep = "GoToFirstHive",
+		TutorialLevel = 12,  -- Level 12 = GoToFirstHive
 		TutorialMessage = "FirstHiveCollection"
 	}
 }
 
--- ✅ TRACK HIGHEST ZONE TO RESUME PER SESSION
-local zonesToResume = {}
+-- ✅ GLOBAL tracking (zones unlock once for all players)
+local unlockedZones = {}
 
 local function unlockZone(zoneConfig)
 	local zone = zoneConfig.Folder
@@ -122,136 +120,112 @@ local function unlockZone(zoneConfig)
 	print("✨ " .. zoneConfig.Name .. " unlocked!")
 end
 
-
--- ✅ RESUME TO HIGHEST NON-COMPLETED ZONE ONLY
-local function resumeHighestZone(player)
-	if not zonesToResume[player. UserId] then return end
-
-	local highestZone = zonesToResume[player.UserId]
-
-	task.spawn(function()
-		task.wait(0.5)
-
-		-- Get player's tutorial state
-		local currentStep = player: FindFirstChild("CurrentArrowStep")
-		if not currentStep then 
-			zonesToResume[player.UserId] = nil
-			return 
-		end
-
-		local progressData = player:GetAttribute("TutorialProgress")
-		if not progressData then 
-			zonesToResume[player.UserId] = nil
-			return 
-		end
-
-		local decoded = game:GetService("HttpService"):JSONDecode(progressData)
-
-		-- ✅ Check if this zone's tutorial step was already completed
-		local alreadyCompleted = false
-		for _, completedStep in ipairs(decoded. CompletedSteps) do
-			if completedStep == highestZone.Step then
-				alreadyCompleted = true
-				break
-			end
-		end
-
-		-- ✅ IF ALREADY COMPLETED, STAY PAUSED (NO MESSAGE, NO RESUME)
-		if alreadyCompleted then
-			print("🎉 Zone step '" .. highestZone.Step .. "' already completed - staying paused")
-			zonesToResume[player.UserId] = nil
-			return
-		end
-
-		-- ✅ IF NOT COMPLETED, SHOW MESSAGE AND RESUME
-		if highestZone.Message and _G.ShowTutorialMessage then
-			_G.ShowTutorialMessage(player, highestZone.Message)
-		end
-
-		task.wait(1)
-
-		-- Resume tutorial to this zone's step
-		if currentStep. Value == "Paused" and _G.ResumeTutorialStep then
-			print("🔄 Resuming tutorial to zone:  " .. highestZone.Step)
-			_G.ResumeTutorialStep(player, highestZone.Step)
-		end
-
-		zonesToResume[player.UserId] = nil
-	end)
-end
-
--- ✅ GLOBAL tracking (zones unlock once for all players)
-local unlockedZones = {}
-
 Players.PlayerAdded:Connect(function(player)
-	zonesToResume[player.UserId] = nil
-
 	local totalEarned = player:WaitForChild("TotalEarned")
 	local beehiveCount = player:WaitForChild("BeehiveCount", 10)
+	local currentLevel = player:WaitForChild("CurrentArrowLevel", 10)
 
-	-- Check for initial unlocks and track HIGHEST zone only
+	print("💰 " .. player.Name .. " joined with TotalEarned: $" .. totalEarned.Value)
+
+	-- Check for initial unlocks on join
 	for _, zoneConfig in ipairs(ZONES) do
+		print("🔍 Checking zone: " .. zoneConfig.Name .. " | Required: $" .. zoneConfig.RequiredEarnings .. " | Has: $" .. totalEarned.Value .. " | Already unlocked: " .. tostring(unlockedZones[zoneConfig.Name]))
+
 		if zoneConfig.Folder and totalEarned.Value >= zoneConfig.RequiredEarnings and not unlockedZones[zoneConfig.Name] then
 			unlockZone(zoneConfig)
 			unlockedZones[zoneConfig.Name] = true
 
-			zonesToResume[player.UserId] = {
-				Step = zoneConfig.TutorialStep,
-				Message = zoneConfig.TutorialMessage
-			}
+			-- ✅ ONLY activate tutorial if player hasn't passed this level yet
+			if zoneConfig.TutorialLevel and currentLevel and currentLevel.Value < zoneConfig.TutorialLevel then
+				if _G.ShowTutorialMessage and zoneConfig.TutorialMessage then
+					task.wait(0.5)
+					_G.ShowTutorialMessage(player, zoneConfig.TutorialMessage)
+				end
+
+				if _G.ActivateTutorialLevel then
+					task.wait(0.5)
+					_G.ActivateTutorialLevel(player, zoneConfig.TutorialLevel)
+					print("🎯 Activated tutorial level " .. zoneConfig.TutorialLevel .. " for " .. zoneConfig.Name)
+				end
+			else
+				print("⏭️ Skipping tutorial level " .. zoneConfig.TutorialLevel .. " - player already at level " .. (currentLevel and currentLevel.Value or "?"))
+			end
 		end
 	end
 
-	task.wait(0.5)
-	resumeHighestZone(player)
 
-	-- Listen to totalEarned changes
+	-- Listen to totalEarned changes (DURING GAMEPLAY ONLY)
 	totalEarned.Changed:Connect(function(earned)
+		print("💰💰 TotalEarned changed to: $" .. earned)
+
+		local highestZoneToUnlock = nil
+		local zonesToUnlock = {}
+
+		-- Find ALL zones that should unlock
 		for _, zoneConfig in ipairs(ZONES) do
 			if zoneConfig.Folder and earned >= zoneConfig.RequiredEarnings and not unlockedZones[zoneConfig.Name] then
-				unlockZone(zoneConfig)
-				unlockedZones[zoneConfig.Name] = true
-
-				zonesToResume[player.UserId] = {
-					Step = zoneConfig.TutorialStep,
-					Message = zoneConfig.TutorialMessage
-				}
+				table.insert(zonesToUnlock, zoneConfig)
+				highestZoneToUnlock = zoneConfig  -- Keep track of highest
 			end
 		end
 
-		task.wait(0.5)
-		resumeHighestZone(player)
+		-- Unlock ALL qualifying zones
+		for _, zoneConfig in ipairs(zonesToUnlock) do
+			unlockZone(zoneConfig)
+			unlockedZones[zoneConfig.Name] = true
+		end
+
+		-- Only show message/arrow for the HIGHEST zone
+		if highestZoneToUnlock then
+			-- Show tutorial message
+			if highestZoneToUnlock.TutorialMessage and _G.ShowTutorialMessage then
+				task.wait(0.5)
+				_G.ShowTutorialMessage(player, highestZoneToUnlock.TutorialMessage)
+			end
+
+			-- Activate tutorial level
+			if highestZoneToUnlock.TutorialLevel and _G.ActivateTutorialLevel then
+				task.wait(0.5)
+				_G.ActivateTutorialLevel(player, highestZoneToUnlock.TutorialLevel)
+				print("🎯 Activated tutorial level " .. highestZoneToUnlock.TutorialLevel .. " for " .. highestZoneToUnlock.Name)
+			end
+		end
 	end)
 
-	-- ✅ ADD THIS: Listen to beehiveCount changes (same pattern as totalEarned)
+
+
+
+	-- Listen to beehiveCount changes
 	if beehiveCount then
 		beehiveCount.Changed:Connect(function(count)
+			print("🐝 BeehiveCount changed: " .. count)
+
 			for _, zoneConfig in ipairs(ZONES) do
 				if zoneConfig.RequiredBeehives and count >= zoneConfig.RequiredBeehives and not unlockedZones[zoneConfig.Name] then
 					unlockedZones[zoneConfig.Name] = true
 
-					zonesToResume[player.UserId] = {
-						Step = zoneConfig.TutorialStep,
-						Message = zoneConfig.TutorialMessage
-					}
+					-- Show tutorial message
+					if zoneConfig.TutorialMessage and _G.ShowTutorialMessage then
+						task.wait(0.5)
+						_G.ShowTutorialMessage(player, zoneConfig.TutorialMessage)
+					end
 
-					task.wait(0.5)
-					resumeHighestZone(player)
+					-- Activate tutorial level
+					if zoneConfig.TutorialLevel and _G.ActivateTutorialLevel then
+						task.wait(0.5)
+						_G.ActivateTutorialLevel(player, zoneConfig.TutorialLevel)
+						print("🎯 Activated tutorial level " .. zoneConfig.TutorialLevel)
+					end
 				end
 			end
 		end)
 	end
 end)
 
-
-Players.PlayerRemoving:Connect(function(player)
-	zonesToResume[player.UserId] = nil
-end)
-
--- ✅ LOCK POULTRY SHOP ON START (only if not already unlocked)
+-- Lock poultry shop on start
 task.wait(2)
 local poultryShop = workspace.AnimalZone and workspace.AnimalZone:FindFirstChild("PoultryShop")
-if poultryShop and not unlockedZones["Poultry Shop"] then  -- ✅ Only lock if not unlocked
+if poultryShop and not unlockedZones["Poultry Shop"] then
 	for _, descendant in pairs(poultryShop:GetDescendants()) do
 		if descendant:IsA("BasePart") then
 			descendant.Transparency = 0.6
@@ -260,7 +234,7 @@ if poultryShop and not unlockedZones["Poultry Shop"] then  -- ✅ Only lock if n
 	local prompt = poultryShop:FindFirstChildOfClass("ProximityPrompt", true)
 	if prompt then
 		prompt:SetAttribute("ZoneLocked", true)
-		prompt.ActionText = "🔒 Earn $1100"  -- ✅ Match your RequiredEarnings
+		prompt.ActionText = "🔒 Earn $1100"
 		print("🔒 Poultry Shop locked")
 	end
 else

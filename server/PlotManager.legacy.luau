@@ -233,11 +233,11 @@ local function handlePlotInteraction(player, prompt, plot)
 		return
 	end
 
-	local owner = plot: GetAttribute("Owner")
+	local owner = plot:GetAttribute("Owner")
 	local isGrowing = plot:GetAttribute("IsGrowing")
 	local canHarvest = plot:GetAttribute("CanHarvest")
 	local plotCost = PLOT_COSTS[plot.Name] or 50
-	local plotPart = plot:IsA("Model") and (plot.PrimaryPart or plot: FindFirstChildWhichIsA("BasePart")) or plot
+	local plotPart = plot:IsA("Model") and (plot.PrimaryPart or plot:FindFirstChildWhichIsA("BasePart")) or plot
 
 	if not owner then
 		-- ============================================
@@ -245,10 +245,10 @@ local function handlePlotInteraction(player, prompt, plot)
 		-- ============================================
 
 		local leaderstats = player:FindFirstChild("leaderstats")
-		local cash = leaderstats and leaderstats: FindFirstChild("Cash")
+		local cash = leaderstats and leaderstats:FindFirstChild("Cash")
 
 		if plotCost == 0 then
-			plot: SetAttribute("Owner", player.Name)
+			plot:SetAttribute("Owner", player.Name)
 
 			local ownedPlots = player:FindFirstChild("OwnedPlots")
 			if ownedPlots then
@@ -261,31 +261,42 @@ local function handlePlotInteraction(player, prompt, plot)
 			prompt.ActionText = "Select Seed to Plant"
 			print(player.Name .. " claimed " .. plot.Name .. " (free)")
 
-			-- Tutorial completions
-			if plot.Name == "Plot5" and _G.CompleteTutorialStep then
-				_G.CompleteTutorialStep(player, "GoToZone1")
-			elseif plot.Name == "Plot9" and _G.CompleteTutorialStep then
-				_G.CompleteTutorialStep(player, "GoToZone2")
-			elseif plot.Name == "Plot13" and _G.CompleteTutorialStep then
-				_G.CompleteTutorialStep(player, "GoToZone3")
+			-- Tutorial: Complete zone unlock levels (free plots)
+			if _G.CompleteTutorialLevel then
+				local currentLevel = player:FindFirstChild("CurrentArrowLevel")
+				print("🔍 DEBUG: Plot claimed - " .. plot.Name .. " | CurrentLevel: " .. (currentLevel and currentLevel.Value or "nil"))
+				if currentLevel then
+					if plot.Name == "Plot5" and currentLevel.Value == 8 then
+						print("🎯 Completing tutorial level 8 - Claimed Zone1 plot")
+						_G.CompleteTutorialLevel(player, 8)
+					elseif plot.Name == "Plot9" and currentLevel.Value == 9 then
+						print("🎯 Completing tutorial level 9 - Claimed Zone2 plot")
+						_G.CompleteTutorialLevel(player, 9)
+					elseif plot.Name == "Plot13" and currentLevel.Value == 10 then
+						print("🎯 Completing tutorial level 10 - Claimed Zone3 plot")
+						_G.CompleteTutorialLevel(player, 10)
+					end
+				end
+			else
+				print("⚠️ _G.CompleteTutorialLevel not found!")
 			end
 
+
 			if SoundManager and plotPart then 
-				pcall(function() SoundManager:PlaySoundAtLocation("PurchaseSound", plotPart. Position) end) 
+				pcall(function() SoundManager:PlaySoundAtLocation("PurchaseSound", plotPart.Position) end) 
 			end
 
 		elseif cash and cash.Value >= plotCost then
 			cash.Value = cash.Value - plotCost
-			
+
 			-- Track spending stats
 			_G.TrackStat(player, "TotalCashSpent", plotCost)
 			_G.TrackStat(player, "MoneySpentOnPlots", plotCost)
 
 			plot:SetAttribute("Owner", player.Name)
-			
+
 			-- Track stat
 			_G.TrackStat(player, "PlotsOwned", 1)
-
 
 			local ownedPlots = player:FindFirstChild("OwnedPlots")
 			if ownedPlots then
@@ -295,23 +306,33 @@ local function handlePlotInteraction(player, prompt, plot)
 				end
 			end
 
-			prompt. ActionText = "Select Seed to Plant"
-			print(player. Name .. " purchased " .. plot. Name .. " for " .. plotCost .. " cash")
+			prompt.ActionText = "Select Seed to Plant"
+			print(player.Name .. " purchased " .. plot.Name .. " for " .. plotCost .. " cash")
 
-			if plot.Name == "Plot5" and _G.CompleteTutorialStep then
-				_G.CompleteTutorialStep(player, "GoToZone1")
-			elseif plot.Name == "Plot9" and _G. CompleteTutorialStep then
-				_G.CompleteTutorialStep(player, "GoToZone2")
-			elseif plot.Name == "Plot13" and _G.CompleteTutorialStep then
-				_G.CompleteTutorialStep(player, "GoToZone3")
+			-- Tutorial: Complete zone unlock levels (paid plots)
+			if _G.CompleteTutorialLevel then
+				local currentLevel = player:FindFirstChild("CurrentArrowLevel")
+				if currentLevel then
+					if plot.Name == "Plot5" and currentLevel.Value == 8 then
+						print("🎯 Completing tutorial level 8 - Claimed Zone1 plot")
+						_G.CompleteTutorialLevel(player, 8)
+					elseif plot.Name == "Plot9" and currentLevel.Value == 9 then
+						print("🎯 Completing tutorial level 9 - Claimed Zone2 plot")
+						_G.CompleteTutorialLevel(player, 9)
+					elseif plot.Name == "Plot13" and currentLevel.Value == 10 then
+						print("🎯 Completing tutorial level 10 - Claimed Zone3 plot")
+						_G.CompleteTutorialLevel(player, 10)
+					end
+				end
 			end
 
 			if SoundManager and plotPart then 
 				pcall(function() SoundManager:PlaySoundAtLocation("PurchaseSound", plotPart.Position) end) 
 			end
 		else
-			print(player. Name .. " needs " .. plotCost .. " cash to purchase " .. plot.Name)
+			print(player.Name .. " needs " .. plotCost .. " cash to purchase " .. plot.Name)
 		end
+
 
 	elseif owner == player.Name and canHarvest then
 		-- ============================================
@@ -346,10 +367,12 @@ local function handlePlotInteraction(player, prompt, plot)
 				})
 			end
 
-			if _G.CompleteTutorialStep and plot.Name == "Plot1" then
-				local currentStep = player:FindFirstChild("CurrentArrowStep")
-				if currentStep and currentStep. Value == "HarvestFirstCrop" then
-					_G.CompleteTutorialStep(player, "HarvestFirstCrop")
+			-- Tutorial: Complete level 4 (First Harvest)
+			if _G.CompleteTutorialLevel and plot.Name == "Plot1" then
+				local currentLevel = player:FindFirstChild("CurrentArrowLevel")
+				if currentLevel and currentLevel.Value == 4 then
+					print("🎯 Completing tutorial level 4 - First harvest")
+					_G.CompleteTutorialLevel(player, 4)
 				end
 			end
 
@@ -437,10 +460,12 @@ local function handlePlotInteraction(player, prompt, plot)
 			})
 		end
 
-		if _G.CompleteTutorialStep then
-			local currentStep = player:FindFirstChild("CurrentArrowStep")
-			if currentStep and currentStep.Value == "GoToPlot" then
-				_G.CompleteTutorialStep(player, "GoToPlot")
+		-- Tutorial: Complete level 3 (Plant First Seed)
+		if _G.CompleteTutorialLevel then
+			local currentLevel = player:FindFirstChild("CurrentArrowLevel")
+			if currentLevel and currentLevel.Value == 3 then
+				print("🎯 Completing tutorial level 3 - Planted first seed")
+				_G.CompleteTutorialLevel(player, 3)
 			end
 		end
 

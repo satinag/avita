@@ -1,13 +1,18 @@
+-- ServerScriptService/TutorialManager
+-- UPDATED to work with TutorialLevelConfig system
+-- Complete file - replace entire content
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
 local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
 
-local TutorialArrowConfig = require(ReplicatedStorage:WaitForChild("TutorialArrowConfig"))
-local TutorialDataStore = DataStoreService:GetDataStore("TutorialProgress_v3.7")
---local TutorialDataStore = DataStoreService:GetDataStore("TutorialProgress_v1.1")
+local TutorialLevelConfig = require(ReplicatedStorage:WaitForChild("TutorialLevelConfig"))
+--local TutorialDataStore = DataStoreService:GetDataStore("TutorialProgress_v3.18.3.1")
+local TutorialDataStore = DataStoreService:GetDataStore("TutorialProgress_v18.0.1") --PUBLISH VERSION
 
--- ✅ Only create if it doesn't exist (prevent duplicates)
+-- Create RemoteEvents
 local showTutorialEvent = ReplicatedStorage:FindFirstChild("ShowTutorialEvent")
 if not showTutorialEvent then
 	showTutorialEvent = Instance.new("RemoteEvent")
@@ -31,13 +36,12 @@ end
 print("📚 Tutorial Manager loaded")
 
 -- ============================================
--- TUTORIAL DATA
+-- TUTORIAL DATA (Popup Messages)
 -- ============================================
-
 local TUTORIAL_DATA = {
 	Welcome = {
-		Title = "🌾 Welcome to Your Farm! ",
-		Message = "Follow the yellow arrow to the Seed Shop.\nBuy seeds to start farming! ",
+		Title = "🌾 Welcome to Your Farm!",
+		Message = "Follow the yellow arrow to the Seed Shop.\nBuy seeds to start farming!",
 		Duration = 8
 	},
 	PlantingTutorial = {
@@ -47,7 +51,7 @@ local TUTORIAL_DATA = {
 	},
 	FirstHarvest = {
 		Title = "🎉 Ready to Harvest!",
-		Message = "Your crop is ready!  Click it to harvest.\nThen follow the arrow to the Barn to sell!",
+		Message = "Your crop is ready! Click it to harvest.\nThen follow the arrow to the Barn to sell!",
 		Duration = 6
 	},
 	BarnVisit = {
@@ -66,7 +70,7 @@ local TUTORIAL_DATA = {
 		Duration = 6
 	},
 	Zone3Unlock = {
-		Title = "🏆 Expansion Zone 3 Unlocked! ",
+		Title = "🏆 Expansion Zone 3 Unlocked!",
 		Message = "You've earned $15,000!\nYou're becoming a farming tycoon!",
 		Duration = 6
 	},
@@ -84,7 +88,18 @@ local TUTORIAL_DATA = {
 		Title = "🍯 First Honey Collection!",
 		Message = "Great! Beehives produce honey every hour.\n\nCollect from each hive manually, or upgrade to passive income in the Barn!",
 		Duration = 7
+	},
+	HouseUpgrade = {
+		Title = "Upgrade Your House!",
+		Message = "Earn enough money and you can always go the Postal Box for upgrading your house",
+		Duration = 7
+	},
+	FishingRodUnlock = {
+		Title = "🎣 Fishing Unlocked!",
+		Message = "You can now fish at the pond!\nCatch fish and sell them for profit!",
+		Duration = 7
 	}
+
 }
 
 -- ============================================
@@ -93,15 +108,16 @@ local TUTORIAL_DATA = {
 
 local function loadPlayerProgress(userId)
 	local success, data = pcall(function()
-		return TutorialDataStore:GetAsync(userId ..  "-progress")
+		return TutorialDataStore:GetAsync(userId .. "-progress")
 	end)
 
 	if success and data then
 		return data
 	else
+		-- Return default data with LEVEL-BASED system
 		return {
-			CurrentStep = TutorialArrowConfig.Steps[1].Name,
-			CompletedSteps = {},
+			CurrentLevel = 1,  -- Start at level 1
+			CompletedLevels = {},
 			ShownMessages = {}
 		}
 	end
@@ -114,6 +130,8 @@ local function savePlayerProgress(userId, progressData)
 end
 
 local function showTutorialMessage(player, messageName)
+	if not messageName then return end
+
 	print("🟢 [SERVER] showTutorialMessage called for: " .. player.Name .. " | Message: " .. messageName)
 
 	local progressData = player:GetAttribute("TutorialProgress")
@@ -122,7 +140,7 @@ local function showTutorialMessage(player, messageName)
 		return 
 	end
 
-	local decoded = game:GetService("HttpService"):JSONDecode(progressData)
+	local decoded = HttpService:JSONDecode(progressData)
 
 	-- Skip if already shown
 	if decoded.ShownMessages[messageName] then 
@@ -133,13 +151,12 @@ local function showTutorialMessage(player, messageName)
 	local data = TUTORIAL_DATA[messageName]
 	if data then
 		print("🟢 [SERVER] Firing ShowTutorialEvent to " .. player.Name .. " | Message: " .. messageName)
-		-- ✅ NO DELAY - ReplicatedFirst always ready
 		showTutorialEvent:FireClient(player, messageName, data)
 		print("📚 Showed " .. messageName .. " to " .. player.Name)
 
 		-- Mark as shown
 		decoded.ShownMessages[messageName] = true
-		local encoded = game:GetService("HttpService"):JSONEncode(decoded)
+		local encoded = HttpService:JSONEncode(decoded)
 		player:SetAttribute("TutorialProgress", encoded)
 		savePlayerProgress(player.UserId, decoded)
 	else
@@ -147,50 +164,60 @@ local function showTutorialMessage(player, messageName)
 	end
 end
 
--- ✅ Make it globally accessible for ZoneUnlockManager
+-- Make globally accessible
 _G.ShowTutorialMessage = showTutorialMessage
 
-local function markStepComplete(player, stepName)
+local function completeTutorialLevel(player, levelNumber)
 	local progressData = player:GetAttribute("TutorialProgress")
 	if not progressData then return end
 
-	local decoded = game:GetService("HttpService"):JSONDecode(progressData)
+	local decoded = HttpService:JSONDecode(progressData)
 
-	-- Already completed this step
-	if decoded.CurrentStep ~= stepName then return end
+	-- Check if we're on this level
+	if decoded.CurrentLevel ~= levelNumber then 
+		print("⚠️ Cannot complete level " .. levelNumber .. " - current level is " .. decoded.CurrentLevel)
+		return 
+	end
 
-	table.insert(decoded.CompletedSteps, stepName)
+	-- Mark level as completed
+	table.insert(decoded.CompletedLevels, levelNumber)
 
-	local nextStep = TutorialArrowConfig:GetNextStep(stepName)
+	-- Get next level
+	local nextLevelConfig = TutorialLevelConfig:GetNextLevel(levelNumber)
 
-	if nextStep then
-		if nextStep.Name == "Paused" then
-			decoded.CurrentStep = "Paused"
-			print("⏸️ " .. player.Name .. " completed: " .. stepName .. " → Tutorial paused")
+	if nextLevelConfig then
+		-- Check if next level is an UnlockTrigger - if so, STOP auto-advancing
+		if nextLevelConfig.TriggerType == "UnlockTrigger" then
+			decoded.CurrentLevel = 999  -- Pause tutorial progression
+			print("⏸️ " .. player.Name .. " completed level " .. levelNumber .. " → Paused (next level requires unlock trigger)")
 		else
-			decoded.CurrentStep = nextStep.Name
-			print("✓ " .. player.Name .. " completed: " .. stepName .. " → Next: " .. nextStep.DisplayName)
+			decoded.CurrentLevel = levelNumber + 1
+			print("✓ " .. player.Name .. " completed level " .. levelNumber .. " → Next: " .. nextLevelConfig.DisplayName)
 
-			-- ✅ REPLACE THIS SECTION (around line 145)
-			if nextStep.TutorialMessage then
+			-- Show message for next level if it has one
+			if nextLevelConfig.MessageToShow then
 				task.spawn(function()
 					task.wait(0.5)
-					showTutorialMessage(player, nextStep.TutorialMessage)
+					showTutorialMessage(player, nextLevelConfig.MessageToShow)
 				end)
 			end
 		end
 	else
-		decoded.CurrentStep = "Completed"
-		print("🎉 " .. player.Name .. " completed ALL tutorial steps!")
+		-- All tutorials complete
+		decoded.CurrentLevel = 999
+		print("🎉 " .. player.Name .. " completed ALL tutorials!")
 	end
 
-	local encoded = game:GetService("HttpService"):JSONEncode(decoded)
+
+	-- Save progress
+	local encoded = HttpService:JSONEncode(decoded)
 	player:SetAttribute("TutorialProgress", encoded)
 	savePlayerProgress(player.UserId, decoded)
 
-	local currentStepValue = player:FindFirstChild("CurrentArrowStep")
-	if currentStepValue then
-		currentStepValue. Value = decoded.CurrentStep
+	-- Update arrow level
+	local currentLevelValue = player:FindFirstChild("CurrentArrowLevel")
+	if currentLevelValue then
+		currentLevelValue.Value = decoded.CurrentLevel
 	end
 end
 
@@ -203,7 +230,7 @@ local activeMonitors = {}
 local function stopMonitoring(userId)
 	if activeMonitors[userId] then
 		for _, connection in ipairs(activeMonitors[userId]) do
-			if connection.Connected then
+			if connection and connection.Connected then
 				connection:Disconnect()
 			end
 		end
@@ -212,38 +239,52 @@ local function stopMonitoring(userId)
 end
 
 local function monitorPlayerProgress(player, character)
-	local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-	local progressData = game:GetService("HttpService"):JSONDecode(player:GetAttribute("TutorialProgress"))
+	local humanoidRootPart = character:WaitForChild("HumanoidRootPart", 5)
+	if not humanoidRootPart then return end
 
-	if progressData.CurrentStep == "Completed" or progressData.CurrentStep == "Paused" then
+	local progressData = HttpService:JSONDecode(player:GetAttribute("TutorialProgress"))
+
+	if progressData.CurrentLevel >= 999 then
+		print("✅ Tutorial completed, no monitoring needed")
 		return
 	end
 
-	local currentStep = TutorialArrowConfig:GetStep(progressData.CurrentStep)
-	if not currentStep then return end
+	-- Get current level config
+	local currentLevelConfig = TutorialLevelConfig:GetLevel(progressData.CurrentLevel)
+	if not currentLevelConfig then 
+		warn("⚠️ No config found for level " .. progressData.CurrentLevel)
+		return 
+	end
 
-	if currentStep.TriggerType == "Manual" then
-		print("⏸ Step '" .. currentStep.Name .. "' requires manual trigger")
+	-- Only monitor Location-based triggers
+	if currentLevelConfig.TriggerType ~= "Location" then
+		print("⏸ Level " .. progressData.CurrentLevel .. " requires manual trigger")
 		return
 	end
 
-	local targetPart = TutorialArrowConfig:GetTargetPart(currentStep.Target, currentStep. TargetType)
-	if not targetPart then return end
+	-- Resolve target
+	local targetObject = TutorialLevelConfig:ResolvePathToTarget(currentLevelConfig.TargetPath)
+	local targetPart = TutorialLevelConfig:GetRenderablePart(targetObject)
 
-	print("📍 Monitoring location step: " .. currentStep.DisplayName)
+	if not targetPart then 
+		warn("⚠️ Could not find target for level " .. progressData.CurrentLevel)
+		return 
+	end
+
+	print("📍 Monitoring location for level " .. progressData.CurrentLevel .. ": " .. currentLevelConfig.DisplayName)
 
 	local connection
 	connection = RunService.Heartbeat:Connect(function()
-		if not humanoidRootPart or not humanoidRootPart.Parent or not player. Parent then
-			connection:Disconnect()
+		if not humanoidRootPart or not humanoidRootPart.Parent or not player.Parent then
+			if connection then connection:Disconnect() end
 			return
 		end
 
 		local distance = (humanoidRootPart.Position - targetPart.Position).Magnitude
 
-		if distance <= currentStep.Distance then
-			markStepComplete(player, currentStep.Name)
-			connection:Disconnect()
+		if distance <= currentLevelConfig.Distance then
+			completeTutorialLevel(player, progressData.CurrentLevel)
+			if connection then connection:Disconnect() end
 
 			task.wait(0.5)
 			monitorPlayerProgress(player, character)
@@ -260,29 +301,36 @@ end
 -- PUBLIC FUNCTIONS
 -- ============================================
 
-function _G.CompleteTutorialStep(player, stepName)
+function _G.CompleteTutorialLevel(player, levelNumber)
 	if not player or not player.Parent then return false end
 
 	local progressData = player:GetAttribute("TutorialProgress")
 	if not progressData then return false end
 
-	local decoded = game:GetService("HttpService"):JSONDecode(progressData)
+	local decoded = HttpService:JSONDecode(progressData)
 
-	if decoded.CurrentStep ~= stepName then
-		if decoded.CurrentStep ~= "Completed" then
-			warn("Cannot complete step '" .. stepName ..  "' - current step is: " .. decoded.CurrentStep)
+	if decoded.CurrentLevel ~= levelNumber then
+		if decoded.CurrentLevel < 999 then
+			warn("Cannot complete level " .. levelNumber .. " - current level is: " .. decoded.CurrentLevel)
 		end
 		return false
 	end
 
-	local stepConfig = TutorialArrowConfig:GetStep(stepName)
-	if not stepConfig or stepConfig.TriggerType ~= "Manual" then
+	local levelConfig = TutorialLevelConfig:GetLevel(levelNumber)
+	if not levelConfig then
+		warn("Level " .. levelNumber .. " not found in config")
 		return false
 	end
 
-	markStepComplete(player, stepName)
+	-- ✅ ALLOW BOTH Manual AND UnlockTrigger types to be manually completed
+	if levelConfig.TriggerType ~= "Manual" and levelConfig.TriggerType ~= "UnlockTrigger" then
+		warn("Level " .. levelNumber .. " cannot be manually completed (type: " .. levelConfig.TriggerType .. ")")
+		return false
+	end
 
-	local character = player. Character
+	completeTutorialLevel(player, levelNumber)
+
+	local character = player.Character
 	if character then
 		task.wait(0.5)
 		monitorPlayerProgress(player, character)
@@ -291,41 +339,50 @@ function _G.CompleteTutorialStep(player, stepName)
 	return true
 end
 
-function _G.ResumeTutorialStep(player, stepName)
+
+function _G.ActivateTutorialLevel(player, levelNumber)
 	if not player or not player.Parent then return false end
 
 	local progressData = player:GetAttribute("TutorialProgress")
 	if not progressData then return false end
 
-	local decoded = game:GetService("HttpService"):JSONDecode(progressData)
+	local decoded = HttpService:JSONDecode(progressData)
 
-	if decoded.CurrentStep ~= "Paused" then
-		return false
-	end
-
-	for _, completed in ipairs(decoded.CompletedSteps) do
-		if completed == stepName then
+	-- Check if level already completed
+	for _, completed in ipairs(decoded.CompletedLevels) do
+		if completed == levelNumber then
 			return false
 		end
 	end
 
-	local stepConfig = TutorialArrowConfig:GetStep(stepName)
-	if not stepConfig then
+	local levelConfig = TutorialLevelConfig:GetLevel(levelNumber)
+	if not levelConfig or levelConfig.TriggerType ~= "UnlockTrigger" then
+		warn("Level " .. levelNumber .. " is not an unlock trigger level")
 		return false
 	end
 
-	decoded.CurrentStep = stepName
-	local encoded = game:GetService("HttpService"):JSONEncode(decoded)
+	-- Activate this level
+	decoded.CurrentLevel = levelNumber
+	local encoded = HttpService:JSONEncode(decoded)
 	player:SetAttribute("TutorialProgress", encoded)
 	savePlayerProgress(player.UserId, decoded)
 
-	local currentStepValue = player:FindFirstChild("CurrentArrowStep")
-	if currentStepValue then
-		currentStepValue.Value = stepName
+	local currentLevelValue = player:FindFirstChild("CurrentArrowLevel")
+	if currentLevelValue then
+		currentLevelValue.Value = levelNumber
 	end
 
-	print("🔄 Resumed tutorial for " .. player.Name ..  " at step: " .. stepName)
+	print("🔄 Activated tutorial level " .. levelNumber .. " for " .. player.Name)
 
+	-- Show message if exists
+	if levelConfig.MessageToShow then
+		task.spawn(function()
+			task.wait(0.5)
+			showTutorialMessage(player, levelConfig.MessageToShow)
+		end)
+	end
+
+	-- Start monitoring
 	local character = player.Character
 	if character then
 		task.wait(0.5)
@@ -345,11 +402,11 @@ tutorialDismissedEvent.OnServerEvent:Connect(function(player, tutorialName)
 	local progressData = player:GetAttribute("TutorialProgress")
 	if not progressData then return end
 
-	local decoded = game:GetService("HttpService"):JSONDecode(progressData)
+	local decoded = HttpService:JSONDecode(progressData)
 	decoded.ShownMessages[tutorialName] = true
-	local encoded = game:GetService("HttpService"):JSONEncode(decoded)
+	local encoded = HttpService:JSONEncode(decoded)
 	player:SetAttribute("TutorialProgress", encoded)
-	savePlayerProgress(player. UserId, decoded)
+	savePlayerProgress(player.UserId, decoded)
 
 	print("📚 " .. player.Name .. " dismissed " .. tutorialName)
 end)
@@ -363,48 +420,24 @@ local monitoringPlayers = {}
 Players.PlayerAdded:Connect(function(player)
 	local progressData = loadPlayerProgress(player.UserId)
 
-	local encoded = game:GetService("HttpService"):JSONEncode(progressData)
+	local encoded = HttpService:JSONEncode(progressData)
 	player:SetAttribute("TutorialProgress", encoded)
 
-	local currentStepValue = Instance.new("StringValue")
-	currentStepValue.Name = "CurrentArrowStep"
-	currentStepValue. Value = progressData.CurrentStep
-	currentStepValue.Parent = player
+	-- Create CurrentArrowLevel IntValue (used by client)
+	local currentLevelValue = Instance.new("IntValue")
+	currentLevelValue.Name = "CurrentArrowLevel"
+	currentLevelValue.Value = progressData.CurrentLevel
+	currentLevelValue.Parent = player
 
-	local function getValidCurrentStep(stepName, completedSteps)
-		local stepConfig = TutorialArrowConfig:GetStep(stepName)
-		if not stepConfig then return "Paused" end
-
-		for _, completed in ipairs(completedSteps) do
-			if completed == stepName then
-				local nextStepConfig = TutorialArrowConfig: GetNextStep(stepName)
-				if not nextStepConfig then 
-					return "Paused" 
-				elseif nextStepConfig.Name == "Paused" then
-					return "Paused"
-				else
-					return getValidCurrentStep(nextStepConfig.Name, completedSteps)
-				end
-			end
-		end
-
-		if stepConfig.ResumeCondition then
-			return "Paused"
-		end
-
-		return stepName
-	end
-
-	progressData.CurrentStep = getValidCurrentStep(progressData.CurrentStep, progressData.CompletedSteps)
-	currentStepValue.Value = progressData.CurrentStep
+	print("📚 " .. player.Name .. " loaded at tutorial level: " .. progressData.CurrentLevel)
 
 	local function onCharacterAdded(character)
 		task.wait(1)
 
-		if progressData.CurrentStep ~= "Completed" and not monitoringPlayers[player.UserId] then
+		if progressData.CurrentLevel < 999 and not monitoringPlayers[player.UserId] then
 			monitoringPlayers[player.UserId] = true
 
-			-- ✅ Try to start arrow monitoring (don't let it break messages)
+			-- Start monitoring with error handling
 			local success, err = pcall(function()
 				monitorPlayerProgress(player, character)
 			end)
@@ -413,17 +446,16 @@ Players.PlayerAdded:Connect(function(player)
 				warn("⚠️ Arrow monitoring failed: " .. tostring(err))
 			end
 
-			-- ✅ ALWAYS show tutorial message (even if arrows failed above)
-			local currentStep = TutorialArrowConfig:GetStep(progressData.CurrentStep)
-			if currentStep and currentStep.TutorialMessage then
+			-- Show tutorial message
+			local currentLevelConfig = TutorialLevelConfig:GetLevel(progressData.CurrentLevel)
+			if currentLevelConfig and currentLevelConfig.MessageToShow then
 				task.spawn(function()
 					task.wait(1.5)
-					showTutorialMessage(player, currentStep.TutorialMessage)
+					showTutorialMessage(player, currentLevelConfig.MessageToShow)
 				end)
 			end
 		end
 	end
-
 
 	player.CharacterAdded:Connect(onCharacterAdded)
 	if player.Character then
@@ -436,4 +468,4 @@ Players.PlayerRemoving:Connect(function(player)
 	monitoringPlayers[player.UserId] = nil
 end)
 
-print("✅ TutorialManager ready - all systems integrated")
+print("✅ TutorialManager ready - Level-based system active")

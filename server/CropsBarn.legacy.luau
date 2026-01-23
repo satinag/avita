@@ -137,18 +137,15 @@ _G.SellCrop = function(player, cropName)
 		DailyQuestManager:UpdateProgress(player, "Sell", {Amount = amountSold})
 	end
 
-	if _G.CompleteTutorialStep then
-		local currentStep = player:FindFirstChild("CurrentArrowStep")
-		if currentStep then
-			if currentStep.Value == "GoToBarn" then
-				_G.CompleteTutorialStep(player, "GoToBarn")
-			end
-
-			if currentStep.Value == "SellAtBarn" then
-				_G.CompleteTutorialStep(player, "SellAtBarn")
-			end
+	-- Tutorial: Complete level 6 (Sell at Barn)
+	if _G.CompleteTutorialLevel then
+		local currentLevel = player:FindFirstChild("CurrentArrowLevel")
+		if currentLevel and currentLevel.Value == 6 then
+			print("🎯 Completing tutorial level 6 - Sold crops")
+			_G.CompleteTutorialLevel(player, 6)
 		end
 	end
+
 
 	if SoundManager then
 		pcall(function() 
@@ -239,6 +236,13 @@ BarnActionEvent.OnServerEvent:Connect(function(player, action, cropName)
 			cash.Value = cash.Value + totalEarned
 			print("💰 " .. player.Name .. " sold " .. quantity .. "x " .. cropName .. " for $" .. totalEarned)
 		end
+		
+		-- ✅ ADD THIS: Update TotalEarned (zone unlock trigger)
+		local totalEarnedValue = player:FindFirstChild("TotalEarned")
+		if totalEarnedValue then
+			totalEarnedValue.Value = totalEarnedValue.Value + totalEarned
+			print("💰 TotalEarned updated to: $" .. totalEarnedValue.Value)
+		end
 
 		-- Remove crops
 		cropValue.Value = 0
@@ -248,6 +252,21 @@ BarnActionEvent.OnServerEvent:Connect(function(player, action, cropName)
 			_G.TrackStat(player, "TotalCashEarned", totalEarned)
 			_G.TrackStat(player, "TotalCropsSold", quantity)
 		end
+
+		-- Tutorial: Complete level 6 (Sell at Barn)
+		local currentLevel = player:FindFirstChild("CurrentArrowLevel")
+		print("🔍 DEBUG: CurrentArrowLevel exists:", currentLevel ~= nil)
+		if currentLevel then
+			print("🔍 DEBUG: CurrentArrowLevel value:", currentLevel.Value)
+			if currentLevel.Value == 6 then
+				print("🎯 Completing tutorial level 6 - Sold crops at barn")
+				if _G.CompleteTutorialLevel then
+					_G.CompleteTutorialLevel(player, 6)
+				end
+			end
+		end
+
+
 
 		-- Notify client
 		BarnActionEvent:FireClient(player, "Sell", true, "Sold " .. quantity .. "x " .. cropName .. " for $" .. totalEarned)

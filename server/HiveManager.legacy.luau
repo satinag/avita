@@ -91,6 +91,17 @@ local function collectHoney(player, hiveNum)
 	local success, result, icon = _G.CollectHoneyProduct(player, hiveNum)
 
 	if success then
+		-- ✅ ADD THIS: Complete tutorial level 12 on first hive collection
+		if hiveNum == 1 then
+			if _G.CompleteTutorialLevel then
+				local currentLevel = player:FindFirstChild("CurrentArrowLevel")
+				if currentLevel and currentLevel.Value == 12 then
+					print("🎯 Completing tutorial level 12 - First hive collection")
+					_G.CompleteTutorialLevel(player, 12)
+				end
+			end
+		end
+
 		local showTutorialEvent = ReplicatedStorage:WaitForChild("ShowTutorialEvent")
 		showTutorialEvent:FireClient(player, "HoneyCollected", {
 			Title = "Honey Collected!",
@@ -106,6 +117,7 @@ local function collectHoney(player, hiveNum)
 		end
 	end
 end
+
 
 local function collectWax(player, hiveNum)
 	if not _G.CollectWaxProduct then

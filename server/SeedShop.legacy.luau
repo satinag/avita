@@ -62,8 +62,8 @@ local function buySeed(player, seedName)
 			print("🌱 " .. player.Name .. " bought " .. seedName .. " seeds")
 
 			-- 🎯 Tutorial: Complete "BuySeeds" step on first seed purchase
-			if _G.CompleteTutorialStep then
-				_G.CompleteTutorialStep(player, "BuySeeds")
+			if _G.CompleteTutorialLevel then
+				_G.CompleteTutorialLevel(player, 2)
 			end
 
 			-- 🏆 INCREMENT TIER on first purchase of this seed

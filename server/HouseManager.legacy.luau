@@ -536,23 +536,26 @@ Players.PlayerAdded:Connect(function(player)
 	print(player.Name .. " owns up to Level " .. savedLevel .. ", active Level " .. activeLevel)
 end)
 
--- ProximityPrompt hook (unchanged except calling createHouseUpgradeGUI)
-local prompt = workspace.Houses:WaitForChild("HouseUpgradePrompt"):WaitForChild("ProximityPrompt")
-
-prompt.Triggered:Connect(function(player)
-	print(player.Name .. " opened house selection")
-	createHouseUpgradeGUI(player)
-end)
-
 -- ============================================
 -- PROXIMITY PROMPT
 -- ============================================
 
-local prompt = workspace.Houses:WaitForChild("HouseUpgradePrompt"):WaitForChild("ProximityPrompt")
+local prompt = workspace.Houses:WaitForChild("PostalBox"):WaitForChild("Model"):WaitForChild("ProximityPrompt")
 
 prompt.Triggered:Connect(function(player)
 	print(player.Name .. " opened house selection")
+
+	-- Tutorial: Complete level 7 (Visit Houses)
+	if _G.CompleteTutorialLevel then
+		local currentLevel = player:FindFirstChild("CurrentArrowLevel")
+		if currentLevel and currentLevel.Value == 7 then
+			print("🎯 Completing tutorial level 7 - Visited houses")
+			_G.CompleteTutorialLevel(player, 7)
+		end
+	end
+
 	createHouseUpgradeGUI(player)
 end)
+
 
 print("✅ House Manager ready!")

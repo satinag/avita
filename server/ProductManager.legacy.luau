@@ -136,11 +136,22 @@ function _G.CollectHoneyProduct(player)
 		end
 
 		print("🍯 " .. player.Name .. " collected " .. honeyAmount .. " honey from " .. totalHives .. " hives")
+
+		-- ✅ ADD THIS: Complete tutorial level 12 on first honey collection
+		if _G.CompleteTutorialLevel then
+			local currentLevel = player:FindFirstChild("CurrentArrowLevel")
+			if currentLevel and currentLevel.Value == 12 then
+				print("🎯 Completing tutorial level 12 - First honey collected")
+				_G.CompleteTutorialLevel(player, 12)
+			end
+		end
+
 		return true, honeyAmount, "🍯"
 	end
 
 	return false, "Inventory error"
 end
+
 
 -- Collect Wax from ALL hives at once (like PoultryBarn)
 function _G.CollectWaxProduct(player)
