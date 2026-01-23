@@ -248,17 +248,6 @@ TutorialLevelConfig.Levels = {
 		Category = "Animals"
 	},
 
-	[11] = {
-		Name = "GoToPoultryShop",
-		DisplayName = "Visit the Poultry Farm",
-		TargetPath = "workspace.AnimalZone.PoultryShop",
-		Distance = 15,
-		TriggerType = "UnlockTrigger",
-		IndicatorType = "Arrow",
-		MessageToShow = "PoultryUnlock",
-		Category = "Animals"
-	},
-
 	[12] = {  
 		Name = "GoToFirstHive",
 		DisplayName = "Collect honey from your hive",

@@ -149,7 +149,14 @@ local function sellFish(player, fishName)
 	cash.Value = cash.Value + earnings
 	fishValue.Value = 0
 
-	print("💰 " .. player.Name .. " sold " .. amountSold .. "x " .. fishName .. " for $" .. earnings)
+	-- Track fish selling quest
+	local DailyQuestManager = require(script.Parent:WaitForChild("DailyQuestManager"))
+	if DailyQuestManager then
+		DailyQuestManager:UpdateProgress(player, "Sell", {Amount = amountSold})
+	end
+
+	print(player.Name .. " sold " .. amountSold .. " x " .. fishName .. " for $" .. earnings)
+
 
 	if _G.TrackStat then
 		_G.TrackStat(player, "TotalCashEarned", earnings)
@@ -157,6 +164,8 @@ local function sellFish(player, fishName)
 
 	return true, earnings, "Sold " .. amountSold .. " " .. fishName
 end
+
+
 
 
 -- ============================================
@@ -194,6 +203,20 @@ function _G.FishAtPond(player)
 
 	-- Add 1 fish
 	fishValue.Value = fishValue.Value + 1
+	
+	-- Track daily quest progress
+	local DailyQuestManager = require(script.Parent:WaitForChild("DailyQuestManager"))
+	if DailyQuestManager then
+		local fishInfo = ProductConfig.GetFishData(fishName)
+		local rarity = fishInfo and fishInfo.Rarity or "Common"
+
+		DailyQuestManager:UpdateFishCatch(player, fishName, rarity, 1)
+		print("📝 Tracked fish catch for quests: " .. fishName .. " (" .. rarity .. ")")
+
+		-- Also track for mixed quests
+		DailyQuestManager:UpdateMixedQuest(player, "CatchFish", 1)
+	end
+
 
 	-- Set cooldown
 	player:SetAttribute("LastFishTime", currentTime)

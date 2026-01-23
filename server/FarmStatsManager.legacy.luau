@@ -47,6 +47,19 @@ function _G.TrackStat(player, statKey, amount)
 	end)
 end
 
+-- Track cash spending (called automatically when cash decreases)
+function _G.TrackCashSpending(player, amount, reason)
+	_G.TrackStat(player, "TotalCashSpent", amount)
+
+	-- Update daily quest progress
+	local DailyQuestManager = require(script.Parent:WaitForChild("DailyQuestManager"))
+	if DailyQuestManager then
+		DailyQuestManager:UpdateProgress(player, "Spend", {Amount = amount})
+	end
+
+	print("💰 " .. player.Name .. " spent $" .. amount .. " on " .. (reason or "unknown"))
+end
+
 function _G.TrackCropHarvest(player, cropName, amount)
 	local data = DataStoreModule.PlayerData[player.UserId]
 	if not data or not data.FarmStats then return end

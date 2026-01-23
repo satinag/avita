@@ -84,6 +84,15 @@ function _G.CollectAnimalProduct(player, animalName)
 	if productValue then
 		productValue.Value = productValue.Value + totalProducts
 
+		-- Track product collection quest
+		local DailyQuestManager = require(script.Parent:WaitForChild("DailyQuestManager"))
+		if DailyQuestManager then
+			DailyQuestManager:UpdateProgress(player, "Collect", {
+				ProductType = productType,
+				Amount = totalProducts
+			})
+		end
+		
 		-- Reset cooldown to current time (or keep partial progress)
 		-- Option 1: Reset to now (wastes partial progress)
 		-- player:SetAttribute("AnimalLastCollect_" .. animalName, currentTime)
@@ -243,6 +252,15 @@ function _G.SellProduct(player, productName, quantity)
 	-- Remove products
 	productValue.Value = productValue.Value - quantity
 
+	-- Track product selling quest
+	local DailyQuestManager = require(script.Parent:WaitForChild("DailyQuestManager"))
+	if DailyQuestManager then
+		DailyQuestManager:UpdateProgress(player, "Sell", {Amount = quantity})
+	end
+
+	-- Track stats...
+
+
 	-- Track stats
 	if _G.TrackStat then
 		_G.TrackStat(player, "TotalCashEarned", earnings)
@@ -380,6 +398,17 @@ task.spawn(function()
 								-- Accumulate 1 product per animal per minute
 								local amount = animalValue.Value
 								productValue.Value = productValue.Value + amount
+								
+								-- Track daily quest progress
+								local DailyQuestManager = require(script.Parent:WaitForChild("DailyQuestManager"))
+								if DailyQuestManager then
+									DailyQuestManager:UpdateProductCollection(player, productType, amount)
+									print("📝 Tracked " .. productType .. " collection for quests: " .. amount)
+
+									-- Also track for mixed quests
+									DailyQuestManager:UpdateMixedQuest(player, "Collect", amount)
+								end
+
 
 								print("🔄 PASSIVE: " .. player.Name .. " gained " .. amount .. " " .. productName .. " from " .. animalValue.Value .. " " .. animalName)
 							end

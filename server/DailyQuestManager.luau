@@ -246,4 +246,302 @@ claimRemote.OnServerInvoke = function(player, questID)
 	return DailyQuestManager:ClaimReward(player, questID)
 end
 
+-- ============================================
+-- NEW QUEST TRACKING FUNCTIONS
+-- ============================================
+
+-- Track animal product collection (Eggs, Milk, Meat, Wool)
+function DailyQuestManager:UpdateProductCollection(player, productType, amount)
+	local data = DataStoreModule.PlayerData[player.UserId]
+	if not data or not data.DailyQuests then return end
+
+	local questsFolder = player:FindFirstChild("DailyQuests")
+	if not questsFolder then return end
+
+	-- Check each active quest
+	for _, quest in ipairs(data.DailyQuests.ActiveQuests) do
+		local progress = data.DailyQuests.Progress[quest.ID]
+
+		-- Match quest type and product
+		if quest.Type == "Collect" and quest.ProductType == productType and not progress.Completed then
+			-- Increment progress
+			progress.Current = math.min(progress.Current + amount, quest.Target)
+
+			-- Update client values
+			for _, questFolder in ipairs(questsFolder:GetChildren()) do
+				local idVal = questFolder:FindFirstChild("ID")
+				if idVal and idVal.Value == quest.ID then
+					local currentVal = questFolder:FindFirstChild("Current")
+					if currentVal then
+						currentVal.Value = progress.Current
+					end
+
+					-- Check if completed
+					if progress.Current >= quest.Target and not progress.Completed then
+						progress.Completed = true
+						local completedVal = questFolder:FindFirstChild("Completed")
+						if completedVal then
+							completedVal.Value = true
+						end
+						print("✅ " .. player.Name .. " completed quest: " .. quest.Name)
+					end
+					break
+				end
+			end
+		end
+	end
+end
+
+-- Track product selling at barn
+function DailyQuestManager:UpdateProductSell(player, amount)
+	self:UpdateProgress(player, "SellProduct", {Amount = amount})
+end
+
+-- Track fish catching
+function DailyQuestManager:UpdateFishCatch(player, fishName, rarity, amount)
+	amount = amount or 1
+	local data = DataStoreModule.PlayerData[player.UserId]
+	if not data or not data.DailyQuests then return end
+
+	local questsFolder = player:FindFirstChild("DailyQuests")
+	if not questsFolder then return end
+
+	-- Check each active quest
+	for _, quest in ipairs(data.DailyQuests.ActiveQuests) do
+		local progress = data.DailyQuests.Progress[quest.ID]
+
+		if not progress.Completed then
+			local matches = false
+
+			-- Generic fish catch
+			if quest.Type == "CatchFish" and not quest.FishType and not quest.FishRarity then
+				matches = true
+			end
+
+			-- Specific fish type
+			if quest.Type == "CatchFish" and quest.FishType == fishName then
+				matches = true
+			end
+
+			-- Rare fish quest
+			if quest.Type == "CatchRareFish" and quest.FishRarity then
+				for _, rarityLevel in ipairs(quest.FishRarity) do
+					if rarityLevel == rarity then
+						matches = true
+						break
+					end
+				end
+			end
+
+			if matches then
+				-- Increment progress
+				progress.Current = math.min(progress.Current + amount, quest.Target)
+
+				-- Update client values
+				for _, questFolder in ipairs(questsFolder:GetChildren()) do
+					local idVal = questFolder:FindFirstChild("ID")
+					if idVal and idVal.Value == quest.ID then
+						local currentVal = questFolder:FindFirstChild("Current")
+						if currentVal then
+							currentVal.Value = progress.Current
+						end
+
+						-- Check if completed
+						if progress.Current >= quest.Target then
+							progress.Completed = true
+							local completedVal = questFolder:FindFirstChild("Completed")
+							if completedVal then
+								completedVal.Value = true
+							end
+							print("✅ " .. player.Name .. " completed quest: " .. quest.Name)
+						end
+						break
+					end
+				end
+			end
+		end
+	end
+end
+
+-- Track fish selling
+function DailyQuestManager:UpdateFishSell(player, amount)
+	self:UpdateProgress(player, "SellFish", {Amount = amount})
+end
+
+-- Track beehive ownership
+function DailyQuestManager:CheckBeehiveOwnership(player)
+	local beehiveCount = player:FindFirstChild("BeehiveCount")
+	if not beehiveCount then return end
+
+	local count = beehiveCount.Value
+
+	local data = DataStoreModule.PlayerData[player.UserId]
+	if not data or not data.DailyQuests then return end
+
+	local questsFolder = player:FindFirstChild("DailyQuests")
+	if not questsFolder then return end
+
+	-- Check beehive ownership quests
+	for _, quest in ipairs(data.DailyQuests.ActiveQuests) do
+		if quest.Type == "OwnBeehives" then
+			local progress = data.DailyQuests.Progress[quest.ID]
+
+			if count >= quest.Target and not progress.Completed then
+				progress.Current = count
+				progress.Completed = true
+
+				-- Update client
+				for _, questFolder in ipairs(questsFolder:GetChildren()) do
+					local idVal = questFolder:FindFirstChild("ID")
+					if idVal and idVal.Value == quest.ID then
+						local currentVal = questFolder:FindFirstChild("Current")
+						local completedVal = questFolder:FindFirstChild("Completed")
+
+						if currentVal then currentVal.Value = count end
+						if completedVal then completedVal.Value = true end
+
+						print("✅ " .. player.Name .. " completed quest: " .. quest.Name)
+						break
+					end
+				end
+			end
+		end
+	end
+end
+
+-- Track animal ownership (different types)
+function DailyQuestManager:CheckAnimalOwnership(player)
+	local animalInventory = player:FindFirstChild("AnimalInventory")
+	if not animalInventory then return end
+
+	-- Count unique animal types
+	local uniqueCount = 0
+	for _, animalValue in ipairs(animalInventory:GetChildren()) do
+		if animalValue:IsA("IntValue") and animalValue.Value > 0 then
+			uniqueCount = uniqueCount + 1
+		end
+	end
+
+	local data = DataStoreModule.PlayerData[player.UserId]
+	if not data or not data.DailyQuests then return end
+
+	local questsFolder = player:FindFirstChild("DailyQuests")
+	if not questsFolder then return end
+
+	-- Check animal ownership quests
+	for _, quest in ipairs(data.DailyQuests.ActiveQuests) do
+		if quest.Type == "OwnAnimals" then
+			local progress = data.DailyQuests.Progress[quest.ID]
+
+			if uniqueCount >= quest.Target and not progress.Completed then
+				progress.Current = uniqueCount
+				progress.Completed = true
+
+				-- Update client
+				for _, questFolder in ipairs(questsFolder:GetChildren()) do
+					local idVal = questFolder:FindFirstChild("ID")
+					if idVal and idVal.Value == quest.ID then
+						local currentVal = questFolder:FindFirstChild("Current")
+						local completedVal = questFolder:FindFirstChild("Completed")
+
+						if currentVal then currentVal.Value = uniqueCount end
+						if completedVal then completedVal.Value = true end
+
+						print("✅ " .. player.Name .. " completed quest: " .. quest.Name)
+						break
+					end
+				end
+			end
+		end
+	end
+end
+
+-- Track marketplace listing
+function DailyQuestManager:UpdateMarketplaceListing(player, amount)
+	amount = amount or 1
+	self:UpdateProgress(player, "ListMarketplace", {Amount = amount})
+end
+
+-- Track marketplace purchases
+function DailyQuestManager:UpdateMarketplacePurchase(player, amount)
+	amount = amount or 1
+	self:UpdateProgress(player, "BuyMarketplace", {Amount = amount})
+end
+
+-- Track when player's listing is sold
+function DailyQuestManager:UpdateMarketplaceSold(player, amount)
+	amount = amount or 1
+	self:UpdateProgress(player, "MarketplaceSold", {Amount = amount})
+end
+
+-- Track cash spending
+function DailyQuestManager:UpdateCashSpending(player, amount)
+	self:UpdateProgress(player, "SpendCash", {Amount = amount})
+end
+
+-- Track mixed quest progress
+function DailyQuestManager:UpdateMixedQuest(player, questType, amount)
+	local data = DataStoreModule.PlayerData[player.UserId]
+	if not data or not data.DailyQuests then return end
+
+	local questsFolder = player:FindFirstChild("DailyQuests")
+	if not questsFolder then return end
+
+	-- Check each active mixed quest
+	for _, quest in ipairs(data.DailyQuests.ActiveQuests) do
+		if quest.Type == "Mixed" and quest.Requirements then
+			local progress = data.DailyQuests.Progress[quest.ID]
+
+			if not progress.MixedProgress then
+				progress.MixedProgress = {}
+				for i, req in ipairs(quest.Requirements) do
+					progress.MixedProgress[i] = 0
+				end
+			end
+
+			-- Update matching requirement
+			for i, req in ipairs(quest.Requirements) do
+				if req.Type == questType then
+					progress.MixedProgress[i] = math.min(
+						progress.MixedProgress[i] + amount, 
+						req.Target
+					)
+				end
+			end
+
+			-- Check if ALL requirements met
+			local allMet = true
+			for i, req in ipairs(quest.Requirements) do
+				if progress.MixedProgress[i] < req.Target then
+					allMet = false
+					break
+				end
+			end
+
+			if allMet and not progress.Completed then
+				progress.Current = quest.Target
+				progress.Completed = true
+
+				-- Update client
+				for _, questFolder in ipairs(questsFolder:GetChildren()) do
+					local idVal = questFolder:FindFirstChild("ID")
+					if idVal and idVal.Value == quest.ID then
+						local currentVal = questFolder:FindFirstChild("Current")
+						local completedVal = questFolder:FindFirstChild("Completed")
+
+						if currentVal then currentVal.Value = quest.Target end
+						if completedVal then completedVal.Value = true end
+
+						print("✅ " .. player.Name .. " completed mixed quest: " .. quest.Name)
+						break
+					end
+				end
+			end
+		end
+	end
+end
+
+print("✅ DailyQuestManager expanded with new quest types")
+
+
 return DailyQuestManager

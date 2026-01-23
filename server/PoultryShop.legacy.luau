@@ -57,7 +57,16 @@ local function buyAnimal(player, animalName, price)
 	-- Increment animal count
 	animalValue.Value = animalValue.Value + 1
 
-	print(player.Name .. " bought " .. animalName .. " (New count: " .. animalValue.Value .. ")")
+	-- Check animal ownership quest
+	local DailyQuestManager = require(script.Parent:WaitForChild("DailyQuestManager"))
+	if DailyQuestManager then
+		task.delay(1, function()
+			DailyQuestManager:CheckAnimalOwnership(player)
+		end)
+	end
+
+	print(player.Name .. " bought " .. animalName .. " New count: " .. animalValue.Value)
+
 
 	if SoundManager then
 		pcall(function()
@@ -92,6 +101,15 @@ local function buyBeehive(player, price)
 	_G.TrackStat(player, "MoneySpentOnAnimals", price)
 
 	beehiveCount.Value = currentCount + 1
+
+	-- Track beehive purchase quest
+	local DailyQuestManager = require(script.Parent:WaitForChild("DailyQuestManager"))
+	if DailyQuestManager then
+		task.delay(1, function()
+			DailyQuestManager:CheckBeehiveOwnership(player)
+		end)
+	end
+
 
 	print(player.Name .. " bought Beehive #" .. (currentCount + 1))
 

@@ -11,7 +11,7 @@ local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
-local PlayerDataStore = DataStoreService:GetDataStore("PlayerDatav18.0.1") -- NEW VERSION
+local PlayerDataStore = DataStoreService:GetDataStore("PlayerDatav18.0.2") -- NEW VERSION
 --local PlayerDataStore = DataStoreService:GetDataStore("PlayerDatav18.3.1") 
 
 
@@ -701,47 +701,27 @@ end
 -- ============================================
 -- MARKETPLACE LISTING FUNCTIONS
 -- ============================================
--- Save marketplace listings to DataStore
+-- NOW HANDLED BY GlobalMarketplaceStore
+-- Keeping stubs for backward compatibility
+
 function DataStoreModule.SaveMarketplaceListings(listings)
-	-- Update global reference
-	GlobalMarketplaceData.Listings = listings
-	print("💾 Saved " .. #listings .. " marketplace listings")
-
-	-- Debug: verify it was saved
-	print("✅ GlobalMarketplaceData now has " .. #GlobalMarketplaceData.Listings .. " listings")
-end
-
-
--- Get marketplace listings from DataStore
-function DataStoreModule.GetMarketplaceListings()
-	-- Return a COPY so modifications don't break the reference
-	local listings = {}
-	for i, listing in ipairs(GlobalMarketplaceData.Listings or {}) do
-		table.insert(listings, listing)
-	end
-	print("📖 Loaded " .. #listings .. " marketplace listings")
-	return listings
-end
-
-
-
-function DataStoreModule:AcquireListingLock(listingId)
-	-- Simple lock mechanism
-	if self.ListingLocks and self.ListingLocks[listingId] then
-		return false
-	end
-
-	self.ListingLocks = self.ListingLocks or {}
-	self.ListingLocks[listingId] = true
+	warn("⚠️ SaveMarketplaceListings is deprecated - use GlobalMarketplaceStore")
 	return true
 end
 
-function DataStoreModule:ReleaseListingLock(listingId)
-	if self.ListingLocks then
-		self.ListingLocks[listingId] = nil
-	end
+function DataStoreModule.GetMarketplaceListings()
+	warn("⚠️ GetMarketplaceListings is deprecated - use GlobalMarketplaceStore")
+	return {}
 end
 
+function DataStoreModule.AcquireListingLock(listingId)
+	warn("⚠️ AcquireListingLock is deprecated")
+	return false
+end
+
+function DataStoreModule.ReleaseListingLock(listingId)
+	warn("⚠️ ReleaseListingLock is deprecated")
+end
 
 
 

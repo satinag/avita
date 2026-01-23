@@ -10,7 +10,7 @@ local HttpService = game:GetService("HttpService")
 
 local TutorialLevelConfig = require(ReplicatedStorage:WaitForChild("TutorialLevelConfig"))
 --local TutorialDataStore = DataStoreService:GetDataStore("TutorialProgress_v3.18.3.1")
-local TutorialDataStore = DataStoreService:GetDataStore("TutorialProgress_v18.0.1") --PUBLISH VERSION
+local TutorialDataStore = DataStoreService:GetDataStore("TutorialProgress_v18.0.2") --PUBLISH VERSION
 
 -- Create RemoteEvents
 local showTutorialEvent = ReplicatedStorage:FindFirstChild("ShowTutorialEvent")

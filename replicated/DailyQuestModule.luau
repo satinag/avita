@@ -106,6 +106,339 @@ DailyQuestModule.QuestPool = {
 	{
 		ID = "EarnCash1", Name = "Earn 1500 Cash", Description = "Earn 1500 cash total", 
 		Type = "Earn", Target = 1500, Reward = {Cash = 1000}, TierReq = 1
+	},
+	
+	-- ============================================
+	-- 🐔 ANIMAL QUESTS
+	-- ============================================
+	{
+		ID = "CollectEggs1", 
+		Name = "Collect Eggs", 
+		Description = "Collect 10 eggs from chickens", 
+		Type = "Collect", 
+		ProductType = "Eggs", 
+		Target = 10, 
+		Reward = {Cash = 300}, 
+		TierReq = 2  -- Unlocks after barn
+	},
+	{
+		ID = "CollectEggs2", 
+		Name = "Egg Collection Streak", 
+		Description = "Collect 25 eggs from chickens", 
+		Type = "Collect", 
+		ProductType = "Eggs", 
+		Target = 25, 
+		Reward = {Cash = 600, Seeds = {Corn = 3}}, 
+		TierReq = 4
+	},
+	{
+		ID = "CollectMilk1", 
+		Name = "Fresh Milk", 
+		Description = "Collect 5 milk from cows", 
+		Type = "Collect", 
+		ProductType = "Milk", 
+		Target = 5, 
+		Reward = {Cash = 400}, 
+		TierReq = 3
+	},
+	{
+		ID = "CollectMilk2", 
+		Name = "Dairy Farm", 
+		Description = "Collect 15 milk from cows", 
+		Type = "Collect", 
+		ProductType = "Milk", 
+		Target = 15, 
+		Reward = {Cash = 1000, Seeds = {Potato = 5}}, 
+		TierReq = 5
+	},
+	{
+		ID = "CollectMeat1", 
+		Name = "Meat Supplier", 
+		Description = "Collect 8 meat from pigs", 
+		Type = "Collect", 
+		ProductType = "Meat", 
+		Target = 8, 
+		Reward = {Cash = 500}, 
+		TierReq = 4
+	},
+	{
+		ID = "CollectWool1", 
+		Name = "Wool Collector", 
+		Description = "Collect 10 wool from sheep", 
+		Type = "Collect", 
+		ProductType = "Wool", 
+		Target = 10, 
+		Reward = {Cash = 550}, 
+		TierReq = 4
+	},
+	{
+		ID = "SellProducts1", 
+		Name = "Product Vendor", 
+		Description = "Sell any 15 animal products at the barn", 
+		Type = "SellProduct", 
+		Target = 15, 
+		Reward = {Cash = 700}, 
+		TierReq = 3
+	},
+	{
+		ID = "SellProducts2", 
+		Name = "Market Expert", 
+		Description = "Sell any 40 animal products", 
+		Type = "SellProduct", 
+		Target = 40, 
+		Reward = {Cash = 1500}, 
+		TierReq = 6
+	},
+	{
+		ID = "OwnAnimals1", 
+		Name = "Animal Farm", 
+		Description = "Own at least 3 different animal types", 
+		Type = "OwnAnimals", 
+		Target = 3, 
+		Reward = {Cash = 800}, 
+		TierReq = 4
+	},
+
+	-- ============================================
+	-- 🐝 BEEHIVE QUESTS
+	-- ============================================
+	{
+		ID = "CollectHoney1", 
+		Name = "Honey Harvest", 
+		Description = "Collect 20 honey from beehives", 
+		Type = "Collect", 
+		ProductType = "Honey", 
+		Target = 20, 
+		Reward = {Cash = 500}, 
+		TierReq = 4
+	},
+	{
+		ID = "CollectHoney2", 
+		Name = "Sweet Success", 
+		Description = "Collect 50 honey from beehives", 
+		Type = "Collect", 
+		ProductType = "Honey", 
+		Target = 50, 
+		Reward = {Cash = 1200, Seeds = {Pumpkin = 3}}, 
+		TierReq = 6
+	},
+	{
+		ID = "CollectWax1", 
+		Name = "Wax Worker", 
+		Description = "Collect 15 wax from beehives", 
+		Type = "Collect", 
+		ProductType = "Wax", 
+		Target = 15, 
+		Reward = {Cash = 600}, 
+		TierReq = 5
+	},
+	{
+		ID = "CollectWax2", 
+		Name = "Wax Master", 
+		Description = "Collect 35 wax from beehives", 
+		Type = "Collect", 
+		ProductType = "Wax", 
+		Target = 35, 
+		Reward = {Cash = 1400}, 
+		TierReq = 7
+	},
+	{
+		ID = "OwnBeehives1", 
+		Name = "Bee Keeper", 
+		Description = "Own at least 3 beehives", 
+		Type = "OwnBeehives", 
+		Target = 3, 
+		Reward = {Cash = 900}, 
+		TierReq = 5
+	},
+	{
+		ID = "OwnBeehives2", 
+		Name = "Apiary Owner", 
+		Description = "Own at least 6 beehives", 
+		Type = "OwnBeehives", 
+		Target = 6, 
+		Reward = {Cash = 2000}, 
+		TierReq = 7
+	},
+
+	-- ============================================
+	-- 🎣 FISHING QUESTS
+	-- ============================================
+	{
+		ID = "CatchFish1", 
+		Name = "First Catch", 
+		Description = "Catch any 5 fish", 
+		Type = "CatchFish", 
+		Target = 5, 
+		Reward = {Cash = 400}, 
+		TierReq = 3
+	},
+	{
+		ID = "CatchFish2", 
+		Name = "Fishing Spree", 
+		Description = "Catch any 15 fish", 
+		Type = "CatchFish", 
+		Target = 15, 
+		Reward = {Cash = 1000}, 
+		TierReq = 5
+	},
+	{
+		ID = "CatchFish3", 
+		Name = "Master Angler", 
+		Description = "Catch any 30 fish", 
+		Type = "CatchFish", 
+		Target = 30, 
+		Reward = {Cash = 2500, Seeds = {Watermelon = 5}}, 
+		TierReq = 7
+	},
+	{
+		ID = "CatchRareFish1", 
+		Name = "Rare Catch", 
+		Description = "Catch 1 Bass or Catfish", 
+		Type = "CatchRareFish", 
+		FishRarity = {"Rare", "Very Rare"}, 
+		Target = 1, 
+		Reward = {Cash = 1000}, 
+		TierReq = 5
+	},
+	{
+		ID = "CatchRareFish2", 
+		Name = "Trophy Hunter", 
+		Description = "Catch 5 rare fish (Bass/Catfish)", 
+		Type = "CatchRareFish", 
+		FishRarity = {"Rare", "Very Rare"}, 
+		Target = 5, 
+		Reward = {Cash = 3500}, 
+		TierReq = 7
+	},
+	{
+		ID = "SellFish1", 
+		Name = "Fish Vendor", 
+		Description = "Sell any 10 fish at the barn", 
+		Type = "SellFish", 
+		Target = 10, 
+		Reward = {Cash = 700}, 
+		TierReq = 4
+	},
+	{
+		ID = "SellFish2", 
+		Name = "Fish Market Pro", 
+		Description = "Sell any 25 fish", 
+		Type = "SellFish", 
+		Target = 25, 
+		Reward = {Cash = 1800}, 
+		TierReq = 6
+	},
+	{
+		ID = "CatchSalmon1", 
+		Name = "Salmon Run", 
+		Description = "Catch 10 Salmon", 
+		Type = "CatchFish", 
+		FishType = "Salmon", 
+		Target = 10, 
+		Reward = {Cash = 600}, 
+		TierReq = 4
+	},
+	{
+		ID = "CatchTuna1", 
+		Name = "Tuna Hunter", 
+		Description = "Catch 5 Tuna", 
+		Type = "CatchFish", 
+		FishType = "Tuna", 
+		Target = 5, 
+		Reward = {Cash = 800}, 
+		TierReq = 5
+	},
+
+	-- ============================================
+	-- 🏪 MARKETPLACE QUESTS (NEW!)
+	-- ============================================
+	{
+		ID = "ListItems1", 
+		Name = "First Listing", 
+		Description = "List 3 items on the marketplace", 
+		Type = "ListMarketplace", 
+		Target = 3, 
+		Reward = {Cash = 500}, 
+		TierReq = 3
+	},
+	{
+		ID = "ListItems2", 
+		Name = "Market Tycoon", 
+		Description = "List 10 items on the marketplace", 
+		Type = "ListMarketplace", 
+		Target = 10, 
+		Reward = {Cash = 1500}, 
+		TierReq = 5
+	},
+	{
+		ID = "BuyItems1", 
+		Name = "Smart Shopper", 
+		Description = "Purchase 5 items from the marketplace", 
+		Type = "BuyMarketplace", 
+		Target = 5, 
+		Reward = {Cash = 600}, 
+		TierReq = 4
+	},
+	{
+		ID = "SellMarket1", 
+		Name = "Successful Seller", 
+		Description = "Have 5 listings sold by other players", 
+		Type = "MarketplaceSold", 
+		Target = 5, 
+		Reward = {Cash = 1200}, 
+		TierReq = 5
+	},
+
+	-- ============================================
+	-- 🎯 MIXED/COMBO QUESTS
+	-- ============================================
+	{
+		ID = "DiverseFarmer1", 
+		Name = "Diverse Farmer", 
+		Description = "Harvest crops AND collect animal products (10 of each)", 
+		Type = "Mixed", 
+		Requirements = {
+			{Type = "Harvest", Target = 10},
+			{Type = "Collect", Target = 10}
+		},
+		Reward = {Cash = 1200, Seeds = {Strawberry = 5}}, 
+		TierReq = 6
+	},
+	{
+		ID = "AllRounder1", 
+		Name = "All-Rounder", 
+		Description = "Plant 5 crops, collect 5 products, catch 5 fish", 
+		Type = "Mixed", 
+		Requirements = {
+			{Type = "Plant", Target = 5},
+			{Type = "Collect", Target = 5},
+			{Type = "CatchFish", Target = 5}
+		},
+		Reward = {Cash = 2000}, 
+		TierReq = 7
+	},
+
+	-- ============================================
+	-- 💰 ECONOMY QUESTS
+	-- ============================================
+	{
+		ID = "SpendCash1", 
+		Name = "Big Spender", 
+		Description = "Spend 2000 cash on upgrades", 
+		Type = "SpendCash", 
+		Target = 2000, 
+		Reward = {Cash = 1000}, 
+		TierReq = 4
+	},
+	{
+		ID = "SpendCash2", 
+		Name = "Investment King", 
+		Description = "Spend 5000 cash on upgrades", 
+		Type = "SpendCash", 
+		Target = 5000, 
+		Reward = {Cash = 2500}, 
+		TierReq = 6
 	}
 }
 

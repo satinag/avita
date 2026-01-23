@@ -205,21 +205,190 @@ local function createFishProductHubGUI()
 		listCorner.CornerRadius = UDim.new(0, 6)
 		listCorner.Parent = listButton
 
+		-- List button (for Products like Eggs, Milk)
 		listButton.MouseButton1Click:Connect(function()
-			print("List button clicked for " .. fish.Name)
-			gui:Destroy()
+			-- Check VIP status first
+			local ReplicatedStorage = game:GetService("ReplicatedStorage")
+			local CheckVIPFunction = ReplicatedStorage:WaitForChild("CheckVIPFunction", 5)
 
-			local maxWait = 50
-			local waited = 0
-			while not _G.OpenMarketplace and waited < maxWait do
-				task.wait(0.1)
-				waited = waited + 1
+			if not CheckVIPFunction then
+				warn("❌ CheckVIPFunction not found")
+				return
 			end
 
-			if _G.OpenMarketplace then
-				_G.OpenMarketplace("Sell Items")
+			local hasVIP = CheckVIPFunction:InvokeServer()
+
+			if hasVIP then
+				-- VIP USER: Show quick-list UI
+				openVIPListingUI(productName) -- You'll create this function below
+			else
+				-- NON-VIP: Show prompt to buy GamePass or go to Town
+				local ShowTutorialEvent = ReplicatedStorage:FindFirstChild("ShowTutorialEvent")
+				if ShowTutorialEvent then
+					ShowTutorialEvent:FireServer("NeedMarketplaceVIP", {
+						Title = "Marketplace VIP Required 🛍️",
+						Message = "Get VIP GamePass to list from anywhere, or walk to the Town Portal to list for free!",
+						Duration = 6
+					})
+				end
+
+				-- Option: Show GamePass purchase prompt
+				local PromptGamePassEvent = ReplicatedStorage:FindFirstChild("PromptGamePassEvent")
+				if PromptGamePassEvent then
+					-- Wait 2 seconds, then show purchase prompt
+					task.wait(2)
+					PromptGamePassEvent:FireServer("MarketplaceVIP")
+				end
 			end
 		end)
+
+		-- ============================================
+		-- VIP LISTING UI FUNCTION
+		-- ============================================
+		local function openVIPListingUI(productName)
+			-- Create simple listing dialog
+			local listingFrame = Instance.new("Frame")
+			listingFrame.Name = "VIPListingFrame"
+			listingFrame.Size = UDim2.new(0.5, 0, 0.4, 0)
+			listingFrame.Position = UDim2.new(0.25, 0, 0.3, 0)
+			listingFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+			listingFrame.BorderSizePixel = 0
+			listingFrame.ZIndex = 20
+			listingFrame.Parent = screenGui
+
+			local corner = Instance.new("UICorner")
+			corner.CornerRadius = UDim.new(0, 12)
+			corner.Parent = listingFrame
+
+			-- Title
+			local title = Instance.new("TextLabel")
+			title.Size = UDim2.new(1, 0, 0, 40)
+			title.BackgroundTransparency = 1
+			title.Text = "🛍️ VIP Quick List - " .. productName
+			title.TextColor3 = Color3.new(1, 1, 1)
+			title.TextSize = 20
+			title.Font = Enum.Font.GothamBold
+			title.ZIndex = 21
+			title.Parent = listingFrame
+
+			-- Quantity input
+			local qtyLabel = Instance.new("TextLabel")
+			qtyLabel.Size = UDim2.new(0.3, 0, 0, 30)
+			qtyLabel.Position = UDim2.new(0.05, 0, 0.25, 0)
+			qtyLabel.BackgroundTransparency = 1
+			qtyLabel.Text = "Quantity:"
+			qtyLabel.TextColor3 = Color3.new(1, 1, 1)
+			qtyLabel.TextSize = 16
+			qtyLabel.Font = Enum.Font.Gotham
+			qtyLabel.TextXAlignment = Enum.TextXAlignment.Left
+			qtyLabel.ZIndex = 21
+			qtyLabel.Parent = listingFrame
+
+			local qtyInput = Instance.new("TextBox")
+			qtyInput.Size = UDim2.new(0.6, 0, 0, 30)
+			qtyInput.Position = UDim2.new(0.35, 0, 0.25, 0)
+			qtyInput.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			qtyInput.Text = "1"
+			qtyInput.TextColor3 = Color3.new(1, 1, 1)
+			qtyInput.TextSize = 18
+			qtyInput.Font = Enum.Font.Gotham
+			qtyInput.PlaceholderText = "Enter quantity"
+			qtyInput.ZIndex = 21
+			qtyInput.Parent = listingFrame
+
+			local qtyCorner = Instance.new("UICorner")
+			qtyCorner.CornerRadius = UDim.new(0, 6)
+			qtyCorner.Parent = qtyInput
+
+			-- Price per unit input
+			local priceLabel = Instance.new("TextLabel")
+			priceLabel.Size = UDim2.new(0.3, 0, 0, 30)
+			priceLabel.Position = UDim2.new(0.05, 0, 0.45, 0)
+			priceLabel.BackgroundTransparency = 1
+			priceLabel.Text = "Price Each:"
+			priceLabel.TextColor3 = Color3.new(1, 1, 1)
+			priceLabel.TextSize = 16
+			priceLabel.Font = Enum.Font.Gotham
+			priceLabel.TextXAlignment = Enum.TextXAlignment.Left
+			priceLabel.ZIndex = 21
+			priceLabel.Parent = listingFrame
+
+			local priceInput = Instance.new("TextBox")
+			priceInput.Size = UDim2.new(0.6, 0, 0, 30)
+			priceInput.Position = UDim2.new(0.35, 0, 0.45, 0)
+			priceInput.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			priceInput.Text = "50"
+			priceInput.TextColor3 = Color3.new(1, 1, 1)
+			priceInput.TextSize = 18
+			priceInput.Font = Enum.Font.Gotham
+			priceInput.PlaceholderText = "Enter price"
+			priceInput.ZIndex = 21
+			priceInput.Parent = listingFrame
+
+			local priceCorner = Instance.new("UICorner")
+			priceCorner.CornerRadius = UDim.new(0, 6)
+			priceCorner.Parent = priceInput
+
+			-- List button
+			local listBtn = Instance.new("TextButton")
+			listBtn.Size = UDim2.new(0.4, 0, 0, 40)
+			listBtn.Position = UDim2.new(0.05, 0, 0.75, 0)
+			listBtn.BackgroundColor3 = Color3.fromRGB(70, 150, 70)
+			listBtn.Text = "List Item"
+			listBtn.TextColor3 = Color3.new(1, 1, 1)
+			listBtn.TextSize = 18
+			listBtn.Font = Enum.Font.GothamBold
+			listBtn.ZIndex = 21
+			listBtn.Parent = listingFrame
+
+			local listCorner = Instance.new("UICorner")
+			listCorner.CornerRadius = UDim.new(0, 8)
+			listCorner.Parent = listBtn
+
+			-- Cancel button
+			local cancelBtn = Instance.new("TextButton")
+			cancelBtn.Size = UDim2.new(0.4, 0, 0, 40)
+			cancelBtn.Position = UDim2.new(0.55, 0, 0.75, 0)
+			cancelBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+			cancelBtn.Text = "Cancel"
+			cancelBtn.TextColor3 = Color3.new(1, 1, 1)
+			cancelBtn.TextSize = 18
+			cancelBtn.Font = Enum.Font.GothamBold
+			cancelBtn.ZIndex = 21
+			cancelBtn.Parent = listingFrame
+
+			local cancelCorner = Instance.new("UICorner")
+			cancelCorner.CornerRadius = UDim.new(0, 8)
+			cancelCorner.Parent = cancelBtn
+
+			-- List button action
+			listBtn.MouseButton1Click:Connect(function()
+				local qty = tonumber(qtyInput.Text)
+				local price = tonumber(priceInput.Text)
+
+				if not qty or qty <= 0 then
+					warn("Invalid quantity")
+					return
+				end
+
+				if not price or price <= 0 then
+					warn("Invalid price")
+					return
+				end
+
+				-- Send to server
+				local VIPListItemEvent = game:GetService("ReplicatedStorage"):WaitForChild("VIPListItemEvent")
+				VIPListItemEvent:FireServer(productName, qty, price, "Products")
+
+				listingFrame:Destroy()
+			end)
+
+			-- Cancel button action
+			cancelBtn.MouseButton1Click:Connect(function()
+				listingFrame:Destroy()
+			end)
+		end
+
 	end
 
 	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 10)

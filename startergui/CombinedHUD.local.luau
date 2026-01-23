@@ -42,173 +42,382 @@ local ITEMS_DATA = {
 	{Name = "Watermelon", Emoji = "🍉", Color = Color3.fromRGB(80, 180, 80)}
 }
 
--- STATS FRAME
-local statsFrame = Instance.new("Frame")
-statsFrame.Name = "StatsFrame"
-statsFrame.Size = UDim2.new(0.35 * scaleX, 0, 0.56 * scaleY, 0)
-statsFrame.Position = statsFramePos
-statsFrame.AnchorPoint = Vector2.new(0, 0)
-statsFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-statsFrame.BackgroundTransparency = 0.15
-statsFrame.BorderSizePixel = 0
-statsFrame.Visible = false
-statsFrame.ZIndex = 5
-statsFrame.Parent = gui
+-- ============================================
+-- TABBED INVENTORY DISPLAY (RESPONSIVE)
+-- ============================================
 
-local statsCorner = Instance.new("UICorner")
-statsCorner.CornerRadius = UDim.new(0, 12)
-statsCorner.Parent = statsFrame
+-- Detect mobile
+local function isMobile()
+	return game:GetService("UserInputService").TouchEnabled and 
+		not game:GetService("UserInputService").KeyboardEnabled
+end
 
-local statsStroke = Instance.new("UIStroke")
-statsStroke.Color = Color3.fromRGB(100, 100, 100)
-statsStroke.Thickness = 2
-statsStroke.Transparency = 0.3
-statsStroke.Parent = statsFrame
+-- ============================================
+-- STATS CONTAINER (CENTERED POPUP LIKE LEADERBOARD)
+-- ============================================
 
-local statsAspect = Instance.new("UIAspectRatioConstraint")
-statsAspect.AspectRatio = 0.9
-statsAspect.Parent = statsFrame
+-- ✅ Stats overlay (dims background)
+local statsOverlay = Instance.new("Frame")
+statsOverlay.Name = "StatsOverlay"
+statsOverlay.Size = UDim2.new(1, 0, 1, 0)
+statsOverlay.Position = UDim2.new(0, 0, 0, 0)
+statsOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+statsOverlay.BackgroundTransparency = 0.5
+statsOverlay.BorderSizePixel = 0
+statsOverlay.Visible = false
+statsOverlay.ZIndex = 100
+statsOverlay.Parent = gui
 
--- Cash label
-local cashLabel = Instance.new("TextLabel")
-cashLabel.Size = UDim2.new(1, -4, 0.11, 0)
-cashLabel.Position = UDim2.new(0, 2, 0, 2)
-cashLabel.BackgroundColor3 = Color3.fromRGB(50, 120, 50)
-cashLabel.BackgroundTransparency = 0
-cashLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-cashLabel.TextScaled = true
-cashLabel.Font = Enum.Font.Gotham
-cashLabel.Text = "💰 Cash: 0"
-cashLabel.BorderSizePixel = 0
-cashLabel.ZIndex = 6
-cashLabel.Parent = statsFrame
+-- Stats container (centered popup)
+local statsContainer = Instance.new("Frame")
+statsContainer.Name = "StatsContainer"
+statsContainer.Size = UDim2.new(isMobile and 0.88 or 0.48, 0, isMobile and 0.85 or 0.75, 0)
+statsContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
+statsContainer.AnchorPoint = Vector2.new(0.5, 0.5)
+statsContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+statsContainer.BackgroundTransparency = 0.15
+statsContainer.BorderSizePixel = 0
+statsContainer.Visible = false
+statsContainer.ZIndex = 101
+statsContainer.Parent = gui
 
-local cashCorner = Instance.new("UICorner")
-cashCorner.CornerRadius = UDim.new(0, 10)
-cashCorner.Parent = cashLabel
+local containerCorner = Instance.new("UICorner")
+containerCorner.CornerRadius = UDim.new(0, 12)
+containerCorner.Parent = statsContainer
 
--- SEEDS SECTION HEADER
-local seedsHeader = Instance.new("TextLabel")
-seedsHeader.Size = UDim2.new(1, -4, 0.09, 0)
-seedsHeader.Position = UDim2.new(0, 2, 0.11, 2)
-seedsHeader.BackgroundColor3 = Color3.fromRGB(100, 150, 50)
-seedsHeader.TextColor3 = Color3.fromRGB(255, 255, 255)
-seedsHeader.TextScaled = true
-seedsHeader.Font = Enum.Font.Gotham
-seedsHeader.Text = "🌱 Seeds"
-seedsHeader.BorderSizePixel = 0
-seedsHeader.ZIndex = 6
-seedsHeader.Parent = statsFrame
+local containerStroke = Instance.new("UIStroke")
+containerStroke.Color = Color3.fromRGB(100, 100, 100)
+containerStroke.Thickness = 2
+containerStroke.Transparency = 0.3
+containerStroke.Parent = statsContainer
 
-local seedsHeaderCorner = Instance.new("UICorner")
-seedsHeaderCorner.CornerRadius = UDim.new(0, 8)
-seedsHeaderCorner.Parent = seedsHeader
+-- Title
+local statsTitle = Instance.new("TextLabel")
+statsTitle.Size = UDim2.new(1, -60, 0, 40)
+statsTitle.Position = UDim2.new(0, 5, 0, 5)
+statsTitle.BackgroundTransparency = 1
+statsTitle.Text = "💰 Inventory"
+statsTitle.TextColor3 = Color3.fromRGB(100, 200, 100)
+statsTitle.TextScaled = true
+statsTitle.Font = Enum.Font.GothamBold
+statsTitle.ZIndex = 102
+statsTitle.Parent = statsContainer
 
--- Create seed labels dynamically (4 per row, 2 rows)
-local seedLabels = {}
-local rowHeight = 0.11
-local startY = 0.20
+-- Close button (X)
+local statsCloseButton = Instance.new("TextButton")
+statsCloseButton.Size = UDim2.new(0, 35, 0, 35)
+statsCloseButton.Position = UDim2.new(1, -40, 0, 5)
+statsCloseButton.BackgroundColor3 = Color3.fromRGB(200, 100, 100)
+statsCloseButton.Text = "X"
+statsCloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+statsCloseButton.TextScaled = true
+statsCloseButton.Font = Enum.Font.GothamBold
+statsCloseButton.ZIndex = 103
+statsCloseButton.Parent = statsContainer
 
-for i, itemData in ipairs(ITEMS_DATA) do
-	local row = math.floor((i - 1) / 4)
-	local col = (i - 1) % 4
+local statsCloseCorner = Instance.new("UICorner")
+statsCloseCorner.CornerRadius = UDim.new(1, 0)
+statsCloseCorner.Parent = statsCloseButton
 
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(0.25, -4, rowHeight, -2)
-	label.Position = UDim2.new(col * 0.25, 2, startY + row * rowHeight, 1)
-	label.BackgroundColor3 = itemData.Color
-	label.TextColor3 = Color3.fromRGB(0, 0, 0)
-	label.TextScaled = true
-	label.Font = Enum.Font.Gotham
-	label.Text = itemData.Emoji .. " 0"
-	label.BorderSizePixel = 0
-	label.ZIndex = 6
-	label.Parent = statsFrame
+-- Tab bar
+local tabBar = Instance.new("Frame")
+tabBar.Name = "TabBar"
+tabBar.Size = UDim2.new(1, -10, 0, 50)
+tabBar.Position = UDim2.new(0, 5, 0, 50)
+tabBar.BackgroundTransparency = 1
+tabBar.BorderSizePixel = 0
+tabBar.ZIndex = 102
+tabBar.Parent = statsContainer
+
+-- Content scroll frame
+local contentScroll = Instance.new("ScrollingFrame")
+contentScroll.Name = "ContentScroll"
+contentScroll.Size = UDim2.new(1, -10, 1, -115)
+contentScroll.Position = UDim2.new(0, 5, 0, 110)
+contentScroll.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+contentScroll.BorderSizePixel = 0
+contentScroll.ScrollBarThickness = 8
+contentScroll.ZIndex = 102
+contentScroll.Parent = statsContainer
+
+local scrollCorner = Instance.new("UICorner")
+scrollCorner.CornerRadius = UDim.new(0, 8)
+scrollCorner.Parent = contentScroll
+
+-- Tab configuration
+local tabs = {
+	{Name = "Seeds", Icon = "🌱", Folder = "SeedInventory"},
+	{Name = "Crops", Icon = "🌾", Folder = "CropInventory"},
+	{Name = "Products", Icon = "🥚", Folder = "ProductInventory"},
+	{Name = "Fish", Icon = "🐟", Folder = "FishInventory"},
+}
+
+local activeTab = "Seeds"
+local tabButtons = {}
+
+-- Create tab button
+local function createTabButton(tabData, index)
+	local button = Instance.new("TextButton")
+	button.Name = tabData.Name .. "Tab"
+	button.Size = UDim2.new(1 / #tabs, -5, 1, 0)
+	button.Position = UDim2.new((index - 1) / #tabs, 2, 0, 0)
+	button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	button.Text = tabData.Icon .. " " .. tabData.Name
+	button.TextColor3 = Color3.fromRGB(200, 200, 200)
+	button.TextScaled = true
+	button.Font = Enum.Font.GothamBold
+	button.ZIndex = 103
+	button.Parent = tabBar
 
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0, 6)
-	corner.Parent = label
+	corner.Parent = button
 
-	seedLabels[itemData.Name] = label
+	local padding = Instance.new("UIPadding")
+	padding.PaddingLeft = UDim.new(0, 5)
+	padding.PaddingRight = UDim.new(0, 5)
+	padding.Parent = button
+
+	tabButtons[tabData.Name] = button
+	return button
 end
 
--- CROPS SECTION HEADER
-local cropsHeader = Instance.new("TextLabel")
-cropsHeader.Size = UDim2.new(1, -4, 0.09, 0)
-cropsHeader.Position = UDim2.new(0, 2, 0.42, 2)
-cropsHeader.BackgroundColor3 = Color3.fromRGB(150, 100, 50)
-cropsHeader.TextColor3 = Color3.fromRGB(255, 255, 255)
-cropsHeader.TextScaled = true
-cropsHeader.Font = Enum.Font.Gotham
-cropsHeader.Text = "🌾 Crops"
-cropsHeader.BorderSizePixel = 0
-cropsHeader.ZIndex = 6
-cropsHeader.Parent = statsFrame
+-- Update tab content
+local function updateTabContent(tabName)
+	-- Clear existing content
+	for _, child in ipairs(contentScroll:GetChildren()) do
+		if child:IsA("Frame") or child:IsA("TextLabel") then
+			child:Destroy()
+		end
+	end
 
-local cropsHeaderCorner = Instance.new("UICorner")
-cropsHeaderCorner.CornerRadius = UDim.new(0, 8)
-cropsHeaderCorner.Parent = cropsHeader
+	-- Find tab data
+	local selectedTab = nil
+	for _, tab in ipairs(tabs) do
+		if tab.Name == tabName then
+			selectedTab = tab
+			break
+		end
+	end
 
--- Create crop labels dynamically (4 per row, 2 rows)
-local cropLabels = {}
-local cropsStartY = 0.51
+	if not selectedTab then return end
 
-for i, itemData in ipairs(ITEMS_DATA) do
-	local row = math.floor((i - 1) / 4)
-	local col = (i - 1) % 4
+	-- Update button colors
+	for name, btn in pairs(tabButtons) do
+		if name == tabName then
+			btn.BackgroundColor3 = Color3.fromRGB(70, 130, 70)
+			btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		else
+			btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+			btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+		end
+	end
 
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(0.25, -4, rowHeight, -2)
-	label.Position = UDim2.new(col * 0.25, 2, cropsStartY + row * rowHeight, 1)
-	label.BackgroundColor3 = itemData.Color
-	label.TextColor3 = Color3.fromRGB(0, 0, 0)
-	label.TextScaled = true
-	label.Font = Enum.Font.Gotham
-	label.Text = itemData.Emoji .. " 0"
-	label.BorderSizePixel = 0
-	label.ZIndex = 6
-	label.Parent = statsFrame
+	-- Get inventory folder
+	local folder = player:FindFirstChild(selectedTab.Folder)
+	if not folder then
+		local noItems = Instance.new("TextLabel")
+		noItems.Size = UDim2.new(1, -10, 0, 40)
+		noItems.Position = UDim2.new(0, 5, 0, 10)
+		noItems.BackgroundTransparency = 1
+		noItems.Text = "No items in this category"
+		noItems.TextColor3 = Color3.fromRGB(150, 150, 150)
+		noItems.Font = Enum.Font.Gotham
+		noItems.TextSize = 16
+		noItems.ZIndex = 103
+		noItems.Parent = contentScroll
+		return
+	end
 
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 6)
-	corner.Parent = label
+	-- Display items
+	local yOffset = 5
+	local items = folder:GetChildren()
 
-	cropLabels[itemData.Name] = label
+	for _, item in ipairs(items) do
+		if item:IsA("IntValue") then
+			local itemFrame = Instance.new("Frame")
+			itemFrame.Size = UDim2.new(1, -10, 0, 30)
+			itemFrame.Position = UDim2.new(0, 5, 0, yOffset)
+			itemFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+			itemFrame.BorderSizePixel = 0
+			itemFrame.ZIndex = 103
+			itemFrame.Parent = contentScroll
+
+			local itemCorner = Instance.new("UICorner")
+			itemCorner.CornerRadius = UDim.new(0, 6)
+			itemCorner.Parent = itemFrame
+
+			-- Item name
+			local nameLabel = Instance.new("TextLabel")
+			nameLabel.Size = UDim2.new(0.65, 0, 1, 0)
+			nameLabel.Position = UDim2.new(0, 10, 0, 0)
+			nameLabel.BackgroundTransparency = 1
+			nameLabel.Text = item.Name
+			nameLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+			nameLabel.Font = Enum.Font.Gotham
+			nameLabel.TextSize = 14
+			nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+			nameLabel.ZIndex = 104
+			nameLabel.Parent = itemFrame
+
+			-- Item count
+			local countLabel = Instance.new("TextLabel")
+			countLabel.Size = UDim2.new(0.35, -10, 1, 0)
+			countLabel.Position = UDim2.new(0.65, 0, 0, 0)
+			countLabel.BackgroundTransparency = 1
+			countLabel.Text = tostring(item.Value)
+			countLabel.TextColor3 = item.Value > 0 and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(150, 150, 150)
+			countLabel.Font = Enum.Font.GothamBold
+			countLabel.TextSize = 16
+			countLabel.TextXAlignment = Enum.TextXAlignment.Right
+			countLabel.ZIndex = 104
+			countLabel.Parent = itemFrame
+
+			-- Live update
+			item:GetPropertyChangedSignal("Value"):Connect(function()
+				countLabel.Text = tostring(item.Value)
+				countLabel.TextColor3 = item.Value > 0 and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(150, 150, 150)
+			end)
+
+			yOffset = yOffset + 35
+		end
+	end
+
+	contentScroll.CanvasSize = UDim2.new(0, 0, 0, yOffset + 10)
 end
 
--- Tools label
-local toolsLabel = Instance.new("TextLabel")
-toolsLabel.Size = UDim2.new(1, -4, 0.11, 0)
-toolsLabel.Position = UDim2.new(0, 2, 0.73, 2)
-toolsLabel.BackgroundColor3 = Color3.fromRGB(100, 100, 150)
-toolsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-toolsLabel.TextScaled = true
-toolsLabel.Font = Enum.Font.Gotham
-toolsLabel.Text = "🛠️ Tools: None"
-toolsLabel.BorderSizePixel = 0
-toolsLabel.ZIndex = 6
-toolsLabel.Parent = statsFrame
+-- Create tabs
+for index, tabData in ipairs(tabs) do
+	local button = createTabButton(tabData, index)
+	button.MouseButton1Click:Connect(function()
+		activeTab = tabData.Name
+		updateTabContent(tabData.Name)
+	end)
+end
 
-local toolsCorner = Instance.new("UICorner")
-toolsCorner.CornerRadius = UDim.new(0, 8)
-toolsCorner.Parent = toolsLabel
+-- Initial load
+task.wait(1)
+updateTabContent("Seeds")
 
--- Plots label
-local plotLabel = Instance.new("TextLabel")
-plotLabel.Size = UDim2.new(1, -4, 0.14, 0)
-plotLabel.Position = UDim2.new(0, 2, 0.84, 2)
-plotLabel.BackgroundColor3 = Color3.fromRGB(120, 80, 40)
-plotLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-plotLabel.TextScaled = true
-plotLabel.Font = Enum.Font.Gotham
-plotLabel.Text = "🟫 Plots: 0/8"
-plotLabel.BorderSizePixel = 0
-plotLabel.ZIndex = 6
-plotLabel.Parent = statsFrame
 
-local plotCorner = Instance.new("UICorner")
-plotCorner.CornerRadius = UDim.new(0, 8)
-plotCorner.Parent = plotLabel
+-- Update tab content
+local function updateTabContent(tabName)
+	-- Clear existing content
+	for _, child in ipairs(contentScroll:GetChildren()) do
+		if child:IsA("Frame") or child:IsA("TextLabel") then
+			child:Destroy()
+		end
+	end
+
+	-- Find tab data
+	local selectedTab = nil
+	for _, tab in ipairs(tabs) do
+		if tab.Name == tabName then
+			selectedTab = tab
+			break
+		end
+	end
+
+	if not selectedTab then return end
+
+	-- Update button colors
+	for name, btn in pairs(tabButtons) do
+		if name == tabName then
+			btn.BackgroundColor3 = Color3.fromRGB(70, 130, 70)
+			btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		else
+			btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+			btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+		end
+	end
+
+	-- Get inventory folder
+	local folder = player:FindFirstChild(selectedTab.Folder)
+	if not folder then
+		local noItems = Instance.new("TextLabel")
+		noItems.Size = UDim2.new(1, -10, 0, 40)
+		noItems.Position = UDim2.new(0, 5, 0, 10)
+		noItems.BackgroundTransparency = 1
+		noItems.Text = "No items in this category"
+		noItems.TextColor3 = Color3.fromRGB(150, 150, 150)
+		noItems.Font = Enum.Font.Gotham
+		noItems.TextSize = isMobile() and 14 or 16
+		noItems.ZIndex = 7
+		noItems.Parent = contentScroll
+		return
+	end
+
+	-- Display items
+	local yOffset = 5
+	local items = folder:GetChildren()
+
+	for _, item in ipairs(items) do
+		if item:IsA("IntValue") then
+			local itemFrame = Instance.new("Frame")
+			itemFrame.Size = UDim2.new(1, -10, 0, isMobile() and 35 or 30)
+			itemFrame.Position = UDim2.new(0, 5, 0, yOffset)
+			itemFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+			itemFrame.BorderSizePixel = 0
+			itemFrame.ZIndex = 103  -- ✅ Match parent ZIndex
+			itemFrame.Parent = contentScroll
+
+
+			local itemCorner = Instance.new("UICorner")
+			itemCorner.CornerRadius = UDim.new(0, 6)
+			itemCorner.Parent = itemFrame
+
+			-- Item name
+			local nameLabel = Instance.new("TextLabel")
+			nameLabel.Size = UDim2.new(0.65, 0, 1, 0)
+			nameLabel.Position = UDim2.new(0, 10, 0, 0)
+			nameLabel.BackgroundTransparency = 1
+			nameLabel.Text = item.Name
+			nameLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+			nameLabel.Font = Enum.Font.Gotham
+			nameLabel.TextSize = isMobile() and 13 or 14
+			nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+			nameLabel.ZIndex = 104  -- ✅ Changed from 8
+			nameLabel.Parent = itemFrame
+
+			-- Item count
+			local countLabel = Instance.new("TextLabel")
+			countLabel.Size = UDim2.new(0.35, -10, 1, 0)
+			countLabel.Position = UDim2.new(0.65, 0, 0, 0)
+			countLabel.BackgroundTransparency = 1
+			countLabel.Text = tostring(item.Value)
+			countLabel.TextColor3 = item.Value > 0 and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(150, 150, 150)
+			countLabel.Font = Enum.Font.GothamBold
+			countLabel.TextSize = isMobile() and 15 or 16
+			countLabel.TextXAlignment = Enum.TextXAlignment.Right
+			countLabel.ZIndex = 104  -- ✅ Changed from 8
+			countLabel.Parent = itemFrame
+
+
+			-- Live update
+			item:GetPropertyChangedSignal("Value"):Connect(function()
+				countLabel.Text = tostring(item.Value)
+				countLabel.TextColor3 = item.Value > 0 and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(150, 150, 150)
+			end)
+
+			yOffset = yOffset + (isMobile() and 40 or 35)
+		end
+	end
+
+	contentScroll.CanvasSize = UDim2.new(0, 0, 0, yOffset + 10)
+end
+
+-- Create tabs
+for index, tabData in ipairs(tabs) do
+	local button = createTabButton(tabData, index)
+	button.MouseButton1Click:Connect(function()
+		activeTab = tabData.Name
+		updateTabContent(tabData.Name)
+	end)
+end
+
+-- Initial load
+task.wait(1)
+updateTabContent("Seeds")
 
 
 -- ✅ RESPONSIVE: QUESTS FRAME
@@ -222,6 +431,7 @@ questsFrame.BackgroundTransparency = 0.15
 questsFrame.BorderSizePixel = 0
 questsFrame.Visible = false
 questsFrame.ZIndex = 5
+questsFrame.ClipsDescendants = true
 questsFrame.Parent = gui
 
 local questsCorner = Instance.new("UICorner")
@@ -237,6 +447,7 @@ questsStroke.Parent = questsFrame
 local questsAspect = Instance.new("UIAspectRatioConstraint")
 questsAspect.AspectRatio = 2.2
 questsAspect.Parent = questsFrame
+
 
 -- ✅ Background overlay (dims everything behind leaderboard)
 local leaderboardOverlay = Instance.new("Frame")
@@ -369,7 +580,6 @@ for i, cat in ipairs(categories) do
 end
 
 
--- Scrolling list
 -- Scrolling list
 local leaderboardScroll = Instance.new("ScrollingFrame")
 leaderboardScroll.Size = UDim2.new(1, -10, 1, -115)  -- Was -95, now -115
@@ -835,36 +1045,19 @@ local function updateStats()
 	if not leaderstats then return end
 
 	local cash = leaderstats:FindFirstChild("Cash")
-	local seedInventory = player:FindFirstChild("SeedInventory")
-	local cropInventory = player:FindFirstChild("CropInventory")
 	local toolsOwned = player:FindFirstChild("ToolsOwned")
 
-	if cash then cashLabel.Text = "💰 Cash: " .. cash.Value end
+	-- Update cash display (if you have a cash label somewhere)
+	-- if cash and cashLabel then 
+	--     cashLabel.Text = "💰 Cash: " .. cash.Value 
+	-- end
 
-	if seedInventory then
-		for _, itemData in ipairs(ITEMS_DATA) do
-			local seedValue = seedInventory:FindFirstChild(itemData.Name)
-			local label = seedLabels[itemData.Name]
-			if label and seedValue then
-				label.Text = itemData.Emoji .. " " .. seedValue.Value
-			end
-		end
-	end
-
-	if cropInventory then
-		for _, itemData in ipairs(ITEMS_DATA) do
-			local cropValue = cropInventory:FindFirstChild(itemData.Name)
-			local label = cropLabels[itemData.Name]
-			if label and cropValue then
-				label.Text = itemData.Emoji .. " " .. cropValue.Value
-			end
-		end
-	end
+	-- ✅ REMOVED: seedLabels and cropLabels updates (handled by tabbed inventory now)
 
 	if toolsOwned then
 		local toolIcons = {}
-		local improvedShovel = toolsOwned:FindFirstChild("Improved Shovel")
-		local wateringCan = toolsOwned:FindFirstChild("Watering Can")
+		local improvedShovel = toolsOwned:FindFirstChild("ImprovedShovel")
+		local wateringCan = toolsOwned:FindFirstChild("WateringCan")
 		local upgradedWateringCan = toolsOwned:FindFirstChild("UpgradedWateringCan")
 		local upgradedShovel = toolsOwned:FindFirstChild("UpgradedShovel")
 
@@ -875,11 +1068,11 @@ local function updateStats()
 			table.insert(toolIcons, "💧" .. (upgradedWateringCan and upgradedWateringCan.Value and "⭐" or ""))
 		end
 
-		if #toolIcons > 0 then
-			toolsLabel.Text = "🛠️ Tools: " .. table.concat(toolIcons, " ")
-		else
-			toolsLabel.Text = "🛠️ Tools: None"
-		end
+		-- if #toolIcons > 0 and toolsLabel then
+		-- 	toolsLabel.Text = "🛠️ Tools: " .. table.concat(toolIcons, " ")
+		-- else
+		-- 	if toolsLabel then toolsLabel.Text = "🛠️ Tools: None" end
+		-- end
 	end
 
 	-- ✅ Count all owned plots (1-16)
@@ -930,8 +1123,16 @@ local function updateStats()
 		end
 	end
 
-	plotLabel.Text = "🟫 Plots: " .. ownedPlots .. "/" .. totalPlots
+	-- if plotLabel then
+	-- 	plotLabel.Text = "🟫 Plots: " .. ownedPlots .. "/" .. totalPlots
+	-- end
+
+	-- ✅ Update the active tab content to refresh inventory display
+	if statsContainer.Visible then
+		updateTabContent(activeTab)
+	end
 end
+
 
 local currentCategory = "TotalEarned"
 
@@ -1099,30 +1300,30 @@ local function toggleStats()
 		questsIcon.Text = "📜"
 	end
 
-	statsFrame.Visible = showStats
+	if showStats and showLeaderboard then
+		showLeaderboard = false
+		leaderboardFrame.Visible = false
+		leaderboardOverlay.Visible = false
+		leaderboardIcon.Text = "🏆"
+	end
+
+	statsContainer.Visible = showStats
+	statsOverlay.Visible = showStats
 	statsIcon.Text = showStats and "❌" or "💰"
 
-	if autoHideThread then
-		task.cancel(autoHideThread)
-		autoHideThread = nil
-	end
-
-	if showStats and isMobile then
-		autoHideThread = task.delay(5, function()
-			showStats = false
-			statsFrame.Visible = false
-			statsIcon.Text = "💰"
-			autoHideThread = nil
-		end)
+	if showStats then
+		updateTabContent(activeTab)
 	end
 end
+
+
 
 local function toggleQuests()
 	showQuests = not showQuests
 
 	if showQuests then
 		showStats = false
-		statsFrame.Visible = false
+		statsContainer.Visible = false  -- ✅ Fixed
 		statsIcon.Text = "💰"
 	end
 
@@ -1144,6 +1345,7 @@ local function toggleQuests()
 	end
 end
 
+
 local showLeaderboard = false
 
 local function toggleLeaderboard()
@@ -1153,26 +1355,26 @@ local function toggleLeaderboard()
 	if showLeaderboard then
 		showStats = false
 		showQuests = false
-		statsFrame.Visible = false
+		statsContainer.Visible = false  -- ✅ Fixed
 		questsFrame.Visible = false
 		statsIcon.Text = "💰"
 		questsIcon.Text = "📜"
 
-		updateLeaderboard()
+		-- ✅ Spawn update in background to prevent lag
+		task.spawn(updateLeaderboard)
 	end
 
 	leaderboardFrame.Visible = showLeaderboard
-	leaderboardOverlay.Visible = showLeaderboard  -- ✅ Show/hide overlay
+	leaderboardOverlay.Visible = showLeaderboard
 	leaderboardIcon.Text = showLeaderboard and "❌" or "🏆"
 
-	-- Mobile auto-hide
 	if autoHideThread then
 		task.cancel(autoHideThread)
 		autoHideThread = nil
 	end
 
 	if showLeaderboard and isMobile then
-		autoHideThread = task.delay(8, function()  -- Longer timeout for centered popup
+		autoHideThread = task.delay(8, function()
 			showLeaderboard = false
 			leaderboardFrame.Visible = false
 			leaderboardOverlay.Visible = false
@@ -1183,9 +1385,13 @@ local function toggleLeaderboard()
 end
 
 
+
 leaderboardButton.MouseButton1Click:Connect(toggleLeaderboard)
+
 questsButton.MouseButton1Click:Connect(toggleQuests)
+
 statsButton.MouseButton1Click:Connect(toggleStats)
+
 journalButton.MouseButton1Click:Connect(function()
 	-- Fire BindableEvent instead of accessing FarmJournalGUI directly
 	local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -1196,11 +1402,14 @@ journalButton.MouseButton1Click:Connect(function()
 	end
 end)
 
-
-
--- ✅ Close button uses toggle function (syncs state properly)
+-- Close button uses toggle function syncs state properly
 closeButton.MouseButton1Click:Connect(function()
 	toggleLeaderboard()  -- Uses the same toggle logic
+end)
+
+-- ✅ Stats close button handler
+statsCloseButton.MouseButton1Click:Connect(function()
+	toggleStats()
 end)
 
 task.spawn(function()

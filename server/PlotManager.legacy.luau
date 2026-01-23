@@ -365,6 +365,10 @@ local function handlePlotInteraction(player, prompt, plot)
 					CropType = seedType,
 					Amount = harvestAmount
 				})
+				
+				-- Also track for mixed quests
+				DailyQuestManager:UpdateMixedQuest(player, "Harvest", harvestAmount)
+				
 			end
 
 			-- Tutorial: Complete level 4 (First Harvest)
@@ -458,6 +462,9 @@ local function handlePlotInteraction(player, prompt, plot)
 				SeedType = selectedSeed,
 				Amount = 1
 			})
+			
+			-- Also track for mixed quests
+			DailyQuestManager:UpdateMixedQuest(player, "Plant", 1)
 		end
 
 		-- Tutorial: Complete level 3 (Plant First Seed)
