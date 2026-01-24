@@ -150,7 +150,7 @@ PurchaseItemEvent.OnServerEvent:Connect(function(player, listingId, buildingId)
 
 	-- Check if buyer has enough money (cross-server - use DataStore)
 	local DataStoreService = game:GetService("DataStoreService")
-	local PlayerDataStore = DataStoreService:GetDataStore("PlayerData_v18.0.1")
+	local PlayerDataStore = DataStoreService:GetDataStore("PlayerDatav18.0.2")
 	local buyerKey = "Player_" .. player.UserId
 
 	local buyerData = nil
@@ -252,7 +252,7 @@ ListItemEvent.OnServerEvent:Connect(function(player, itemName, quantity, pricePe
 
 	-- Load player data from Farm place
 	local DataStoreService = game:GetService("DataStoreService")
-	local PlayerDataStore = DataStoreService:GetDataStore("PlayerData_v18.0.1")
+	local PlayerDataStore = DataStoreService:GetDataStore("PlayerDatav18.0.2")
 	local key = "Player_" .. player.UserId
 
 	local playerData = nil

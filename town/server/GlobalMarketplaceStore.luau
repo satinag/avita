@@ -5,7 +5,7 @@
 local DataStoreService = game:GetService("DataStoreService")
 local HttpService = game:GetService("HttpService")
 
-local MarketplaceStore = DataStoreService:GetDataStore("GlobalMarketplace_v1")
+local MarketplaceStore = DataStoreService:GetDataStore("GlobalMarketplace_v1.0.0")
 local LISTING_PREFIX = "Listing_"
 local MAX_LISTING_AGE = 7 * 24 * 60 * 60 -- 7 days in seconds
 
