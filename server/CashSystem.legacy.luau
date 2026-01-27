@@ -177,9 +177,6 @@ local function setupPlayerData(player, data)
 	end
 
 
-	print("🐝 " .. player.Name .. " loaded with " .. beehiveCount.Value .. " beehives")
-
-
 	-- NEW: Create upgraded tool BoolValues
 	local upgradedWateringCan = Instance.new("BoolValue")
 	upgradedWateringCan.Name = "UpgradedWateringCan"

@@ -3,7 +3,7 @@ local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local TOWN_PLACE_ID = 95651613209851
+local TOWN_PLACE_ID = 139995214926960
 
 local townPortal = workspace:WaitForChild("TownPortal", 10)
 if not townPortal then

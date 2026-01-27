@@ -13,8 +13,6 @@ end)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-print("🌾 CropsBarn Manager loaded!")
-
 -- ============================================
 -- CREATE REMOTE EVENTS/FUNCTIONS (FIRST!)
 -- ============================================
@@ -25,7 +23,6 @@ if not GetCropDataFunction then
 	GetCropDataFunction = Instance.new("RemoteFunction")
 	GetCropDataFunction.Name = "GetCropData"
 	GetCropDataFunction.Parent = ReplicatedStorage
-	print("✅ Created GetCropData RemoteFunction")
 end
 
 -- Create RemoteEvent for barn actions
@@ -34,7 +31,6 @@ if not BarnActionEvent then
 	BarnActionEvent = Instance.new("RemoteEvent")
 	BarnActionEvent.Name = "BarnActionEvent"
 	BarnActionEvent.Parent = ReplicatedStorage
-	print("✅ Created BarnActionEvent")
 end
 
 -- Create RemoteEvent to open barn GUI
@@ -43,7 +39,6 @@ if not OpenBarnEvent then
 	OpenBarnEvent = Instance.new("RemoteEvent")
 	OpenBarnEvent.Name = "OpenBarnEvent"
 	OpenBarnEvent.Parent = ReplicatedStorage
-	print("✅ Created OpenBarnEvent")
 end
 
 -- ============================================

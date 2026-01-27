@@ -16,7 +16,6 @@ if not GetProductDataFunction then
 	GetProductDataFunction = Instance.new("RemoteFunction")
 	GetProductDataFunction.Name = "GetProductData"
 	GetProductDataFunction.Parent = ReplicatedStorage
-	print("✅ Created GetProductData RemoteFunction")
 end
 
 local ProductActionEvent = ReplicatedStorage:FindFirstChild("ProductActionEvent")
@@ -24,7 +23,6 @@ if not ProductActionEvent then
 	ProductActionEvent = Instance.new("RemoteEvent")
 	ProductActionEvent.Name = "ProductActionEvent"
 	ProductActionEvent.Parent = ReplicatedStorage
-	print("✅ Created ProductActionEvent")
 end
 
 local OpenPoultryBarnEvent = ReplicatedStorage:FindFirstChild("OpenPoultryBarnEvent")
@@ -32,10 +30,7 @@ if not OpenPoultryBarnEvent then
 	OpenPoultryBarnEvent = Instance.new("RemoteEvent")
 	OpenPoultryBarnEvent.Name = "OpenPoultryBarnEvent"
 	OpenPoultryBarnEvent.Parent = ReplicatedStorage
-	print("✅ Created OpenPoultryBarnEvent")
 end
-
-print("🏠 Poultry Barn loaded!")
 
 -- ============================================
 -- CONSTANTS
@@ -69,14 +64,11 @@ local function getOwnedAnimals(player)
 		return owned
 	end
 
-	print("✅ AnimalInventory found, checking children...")
-
 	for _, animalValue in ipairs(animalInventory:GetChildren()) do
-		print("  - Found: " .. animalValue.Name .. " (Type: " .. animalValue.ClassName .. ", Value: " .. tostring(animalValue.Value) .. ")")
 
 		if animalValue:IsA("IntValue") and animalValue.Value > 0 then
 			table.insert(owned, animalValue.Name)
-			print("  ✅ Added " .. animalValue.Name .. " to owned list")
+			print("  ✅ Added " .. animalValue.Name .. ":" .. tostring(animalValue.Value) .. " to owned list")
 		end
 	end
 
@@ -413,9 +405,17 @@ local function createBarnGUI(player, refreshCallback)
 				sellListCorner.Parent = sellListBtn
 
 				sellListBtn.MouseButton1Click:Connect(function()
+					print("🔵 Sell/List button clicked for " .. animalName)
 					gui:Destroy()  -- Close barn
-					OpenPoultryBarnEvent:FireClient(player, "PoultryBarn")  -- Pass source
+
+					-- ✅ DIRECT FIRE - Same as HiveManager
+					local OpenProductHubEvent = ReplicatedStorage:FindFirstChild("OpenProductHubEvent")
+					if OpenProductHubEvent then
+						OpenProductHubEvent:FireClient(player)
+					end
 				end)
+
+
 			end
 
 			yPos = yPos + rowHeight + 10
@@ -457,10 +457,11 @@ if not OpenPoultryBarnServer then
 	OpenPoultryBarnServer = Instance.new("RemoteEvent")
 	OpenPoultryBarnServer.Name = "OpenPoultryBarnServer"
 	OpenPoultryBarnServer.Parent = ReplicatedStorage
-	print("✅ Created OpenPoultryBarnServer RemoteEvent")
 end
 
 OpenPoultryBarnServer.OnServerEvent:Connect(function(player)
 	print("🔵 Client requested to reopen PoultryBarn")
 	_G.openPoultryBarn(player)
 end)
+
+print("🏠 Poultry Barn loaded!")

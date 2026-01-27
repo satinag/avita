@@ -148,6 +148,16 @@ local DEFAULT_DATA = {
 		ActiveQuests = {},
 		Progress = {}
 	},
+	
+	TownSellCooldowns = {
+		Bakery = 0,          -- Last sell timestamp (game time)
+		Fishery = 0,
+		DairyShop = 0,
+		CookieShop = 0,
+		ProduceMarket = 0,
+		FruitStand = 0,
+		BeeShop = 0
+	},
 
 	PoultryCooldowns = {},
 	HiveCooldowns = {},
@@ -299,6 +309,83 @@ function DataStoreModule:LoadData(player)
 			player:SetAttribute("TutorialArrowData", encoded)
 			print("📚 Loaded tutorial level " .. tutorialData.CurrentLevel .. " for " .. player.Name)
 		end
+		
+		-- ✅ RESTORE CANCELLED LISTINGS
+		task.spawn(function()
+			task.wait(2)  -- Wait for inventories to load
+
+			local DataStoreService = game:GetService("DataStoreService")
+			local PendingListingsStore = DataStoreService:GetDataStore("GlobalPendingListings", "global")
+
+			local success, pages = pcall(function()
+				return PendingListingsStore:ListKeysAsync("Listing_", 100)
+			end)
+
+			if not success then return end
+
+			local restoredCount = 0
+
+			repeat
+				local pageData = pages:GetCurrentPage()
+				for _, keyInfo in ipairs(pageData) do
+					local listingSuccess, listing = pcall(function()
+						return PendingListingsStore:GetAsync(keyInfo.KeyName)
+					end)
+
+					if listingSuccess and listing and listing.Status == "Cancelled" and listing.PlayerUserId == player.UserId then
+						-- Restore items to inventory
+						local inventory
+						local category = listing.Category or "Crops"
+
+						if category == "Crops" then
+							inventory = player:FindFirstChild("CropInventory")
+						elseif category == "Products" then
+							inventory = player:FindFirstChild("ProductInventory")
+						elseif category == "Fish" then
+							inventory = player:FindFirstChild("FishInventory")
+						end
+
+						if inventory then
+							local valueObj = inventory:FindFirstChild(listing.ItemName)
+							if not valueObj then
+								valueObj = Instance.new("IntValue")
+								valueObj.Name = listing.ItemName
+								valueObj.Value = 0
+								valueObj.Parent = inventory
+							end
+
+							valueObj.Value = valueObj.Value + listing.Quantity
+							restoredCount = restoredCount + 1
+
+							print("✅ Restored cancelled listing:", listing.Quantity, listing.ItemName, "to", player.Name)
+
+							-- Delete from DataStore
+							pcall(function()
+								PendingListingsStore:RemoveAsync(keyInfo.KeyName)
+							end)
+						end
+					end
+				end
+
+				if not pages.IsFinished then
+					pages:AdvanceToNextPageAsync()
+				end
+			until pages.IsFinished
+
+			if restoredCount > 0 then
+				print("🔄 Restored", restoredCount, "cancelled listings for", player.Name)
+
+				local ShowTutorialEvent = game.ReplicatedStorage:FindFirstChild("ShowTutorialEvent")
+				if ShowTutorialEvent then
+					ShowTutorialEvent:FireClient(player, "ListingsRestored", {
+						Title = "📦 Items Restored",
+						Message = "Cancelled listings returned to your inventory",
+						Duration = 3
+					})
+				end
+			end
+		end)
+
 
 		-- **Check session lock**
 		local currentJobId = game.JobId
@@ -396,7 +483,6 @@ function DataStoreModule:SaveData(player)
 		for _, animalValue in ipairs(animalInventory:GetChildren()) do
 			if animalValue:IsA("IntValue") then
 				data.Animals[animalValue.Name] = animalValue.Value
-				print("💾 Saving " .. animalValue.Name .. ": " .. animalValue.Value)
 			end
 		end
 	end
@@ -522,7 +608,6 @@ function DataStoreModule:SaveData(player)
 	local beehiveCount = player:FindFirstChild("BeehiveCount")
 	if beehiveCount then
 		data.Beehives.Count = beehiveCount.Value
-		print("Saving " .. beehiveCount.Value .. " beehives for " .. player.Name)
 
 		-- Save individual hive cooldowns
 		for i = 1, beehiveCount.Value do
@@ -569,7 +654,6 @@ function DataStoreModule:SaveData(player)
 				local lastCollect = player:GetAttribute("AnimalLastCollect_" .. animalValue.Name)
 				if lastCollect then
 					data.PoultryCooldowns[animalValue.Name] = lastCollect
-					print("💾 Saving cooldown for " .. animalValue.Name .. ": " .. lastCollect)
 				end
 			end
 		end
@@ -633,7 +717,6 @@ function DataStoreModule:SaveData(player)
 				data.Plots[plotName].PlantTime = (plantTime > 0) and plantTime or nil
 
 				if owner then
-					print(plotName .. " - Owner: " .. owner .. ", Seed: " .. tostring(currentSeed and currentSeed or "none"))
 				end
 			end
 		end

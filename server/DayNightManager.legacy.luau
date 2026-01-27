@@ -536,9 +536,16 @@ Players.PlayerAdded:Connect(function(player)
 	initPlayerEnergy(player)
 	task.wait(0.5)
 
-	local DataStoreModule = require(game:GetService("ServerScriptService"):WaitForChild("DataStoreModule"))
-	local data = DataStoreModule.PlayerData[player.UserId]
-
+	local DataStoreModule
+	local dsModule = game.ServerScriptService:FindFirstChild("DataStoreModule")
+	if dsModule then
+		DataStoreModule = require(dsModule)
+	end
+	local data = nil
+	if DataStoreModule then
+		data = DataStoreModule.PlayerData[player.UserId]
+	end
+	
 	if data and data.GameTime then
 		-- EXISTING PLAYER - Load saved time + offline progress
 		_G.playerGameTime[player.UserId] = data.GameTime or CONFIG.START_TIME

@@ -744,7 +744,6 @@ task.spawn(function()
 						print("🐝 " .. playerWhoTriggered.Name .. " triggered Hive" .. i)
 						_G.openHiveBarn(playerWhoTriggered)
 					end)
-					print("✅ Hive" .. i .. " proximity prompt connected")
 				end
 			end
 		end
